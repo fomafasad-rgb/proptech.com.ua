@@ -3,31 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropTech Gbud.digital— Технологічне будівництво та монтаж</title>
-    <meta name="description" content="Впровадження сучасних цифрових систем та технологій у будівництво.">
+    <title>PropTech GBUD | gbud.digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { max-width: 500px; padding: 40px; border: 1px solid #30363d; border-radius: 16px; background: #161b22; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        h1 { color: #58a6ff; font-size: 2rem; margin: 0 0 15px; }
-        .tag { display: inline-block; background: #238636; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; margin-bottom: 20px; }
-        p { line-height: 1.6; font-size: 1.1rem; }
-        .services { text-align: left; background: #0d1117; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #58a6ff; }
-        .footer { margin-top: 30px; font-size: 0.8rem; color: #8b949e; }
+        :root {
+            --primary: #FFD700;
+            --success: #28a745; /* Той самий зелений */
+            --bg: #0a0a0a;
+            --card-bg: #111111;
+            --text: #ffffff;
+            --gray: #888888;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Inter', sans-serif; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0;
+            background-image: 
+                linear-gradient(rgba(255, 215, 0, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 215, 0, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            border: 1px solid #222; 
+            border-top: 4px solid var(--primary);
+            border-radius: 12px; 
+            padding: 50px 40px; 
+            max-width: 550px; 
+            text-align: center; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::after {
+            content: "LAB";
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.6rem;
+            font-weight: 900;
+            color: rgba(255,215,0,0.2);
+            letter-spacing: 2px;
+        }
+
+        /* Повертаємо зелене віконечко */
+        .badge { 
+            background: var(--success);
+            color: #ffffff; 
+            padding: 5px 15px; 
+            border-radius: 20px; 
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            display: inline-block; 
+            margin-bottom: 30px; 
+            letter-spacing: 1px;
+        }
+
+        h1 { 
+            font-size: 2.2rem; 
+            margin-bottom: 30px; 
+            color: var(--text); 
+            font-weight: 900; 
+            text-transform: uppercase;
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+        
+        h1 span { color: var(--primary); }
+
+        .info { 
+            background: #080808; 
+            border-left: 3px solid var(--primary); 
+            padding: 25px; 
+            text-align: left; 
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { 
+            color: #ccc; 
+            margin-bottom: 12px; 
+            font-size: 1rem; 
+            line-height: 1.5;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        li:last-child { margin-bottom: 0; }
+
+        li::before { 
+            content: " "; 
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 8px;
+            height: 2px;
+            background: var(--primary); 
+        }
+
+        footer { 
+            margin-top: 40px; 
+            font-size: 0.75rem; 
+            color: var(--gray); 
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 40px 25px; margin: 20px; }
+            h1 { font-size: 1.8rem; }
+        }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="tag">Проєкт</div>
-        <h1>Проєкт PropTech GBUD</h1>
+        <div class="badge">Проєкт</div>
+        <h1>PropTech <span>GBUD</span></h1>
         
-        <div class="services">
-            • Впровадження систем моніторингу та автоматизація прогресу робіт у реальному часі.<br>
-            • Технологічний консалтинг
+        <div class="info">
+            <ul>
+                <li>Впровадження систем моніторингу та автоматизація прогресу робіт у реальному часі.</li>
+                <li>Цифрове сканування та технологічний консалтинг.</li>
+            </ul>
         </div>
 
-        <div class="footer">
-            © 2026 PropTech.com.ua<strong></strong>
-        </div>
+        <footer>© 2026 proptech.com.ua</footer>
     </div>
 </body>
 </html>
+
