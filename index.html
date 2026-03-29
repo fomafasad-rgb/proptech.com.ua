@@ -102,6 +102,46 @@
         .tech-card p { font-size: 0.85rem; color: #888; line-height: 1.8; }
         .tech-card .value { font-size: 1.5rem; font-weight: 900; color: #fff; margin: 15px 0; }
 
+        /* Секція креслення SmartPlanka */
+        .blueprint-section {
+            padding: 80px 5%;
+            border-top: 1px solid var(--grid);
+            background: rgba(255,215,0,0.01);
+            position: relative;
+            z-index: 10;
+        }
+        .blueprint-header { margin-bottom: 50px; text-align: left; }
+        .bp-label { font-size: 0.7rem; color: var(--primary); opacity: 0.5; letter-spacing: 2px; display: block; margin-bottom: 10px; }
+        .blueprint-header h2 { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; color: #fff; text-transform: uppercase; }
+        .blueprint-header h2 span { color: var(--primary); text-shadow: var(--glow); }
+        
+        .blueprint-container {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 50px;
+            align-items: center;
+        }
+        .blueprint-view {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--grid);
+            padding: 30px;
+            border-radius: 5px;
+            position: relative;
+        }
+        .bp-svg { width: 100%; height: auto; display: block; }
+        
+        .blueprint-info { display: flex; flex-direction: column; gap: 30px; }
+        .info-block h4 { 
+            font-family: 'Orbitron', sans-serif; 
+            color: var(--primary); 
+            margin-bottom: 10px; 
+            font-size: 1.1rem;
+            border-left: 2px solid var(--primary);
+            padding-left: 15px;
+            text-transform: uppercase;
+        }
+        .info-block p { font-size: 0.85rem; color: #888; line-height: 1.6; }
+
         footer {
             padding: 40px; text-align: center; border-top: 1px solid var(--grid);
             font-size: 0.7rem; color: #333; letter-spacing: 2px;
@@ -111,6 +151,9 @@
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
             .tech-grid { grid-template-columns: 1fr; }
+            .blueprint-container { grid-template-columns: 1fr; }
+            .blueprint-header { text-align: center; }
+            .blueprint-header h2 { font-size: 1.8rem; }
         }
     </style>
 </head>
@@ -161,6 +204,54 @@
                 <p>Створення цифрового двійника об'єкта для прогнозування терміну служби матеріалів та планових ремонтів.</p>
             </div>
         </div>
+
+        <section class="blueprint-section">
+            <div class="blueprint-header">
+                <span class="bp-label">[ TECHNICAL_DRAWING_09-A ]</span>
+                <h2>SmartPlanka™ <span>в розрізі</span></h2>
+            </div>
+
+            <div class="blueprint-container">
+                <div class="blueprint-view">
+                    <svg viewBox="0 0 400 300" class="bp-svg">
+                        <path d="M50,250 L50,100 L150,50 L250,50 L350,100 L350,250" fill="none" stroke="var(--primary)" stroke-width="3" stroke-dasharray="5,5"/>
+                        <rect x="180" y="60" width="40" height="30" fill="rgba(255, 215, 0, 0.2)" stroke="var(--primary)" stroke-width="1">
+                            <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
+                        </rect>
+                        <line x1="200" y1="60" x2="200" y2="30" stroke="var(--primary)" stroke-width="2" />
+                        <circle cx="200" cy="30" r="4" fill="var(--primary)" />
+                        
+                        <g class="bp-callout">
+                            <line x1="50" y1="150" x2="20" y2="150" stroke="#555" stroke-width="1"/>
+                            <text x="5" y="145" fill="#888" font-size="10" font-family="'JetBrains Mono', monospace">0.7mm STEEL</text>
+                        </g>
+                        <g class="bp-callout">
+                            <line x1="220" y1="75" x2="280" y2="75" stroke="#555" stroke-width="1"/>
+                            <text x="285" y="80" fill="#888" font-size="10" font-family="'JetBrains Mono', monospace">IoT SENSOR NODE</text>
+                        </g>
+                        <g class="bp-callout">
+                            <line x1="200" y1="30" x2="250" y2="10" stroke="#555" stroke-width="1"/>
+                            <text x="255" y="15" fill="#888" font-size="10" font-family="'JetBrains Mono', monospace">RF TRANSPARENT WINDOW</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <div class="blueprint-info">
+                    <div class="info-block">
+                        <h4>Корпус спецвиробу</h4>
+                        <p>Метал 0.5 – 0.7 мм з полімерним покриттям. Планка виступає захисним екраном та основою для кріплення.</p>
+                    </div>
+                    <div class="info-block">
+                        <h4>Сенсорний модуль</h4>
+                        <p>Енергоефективна передача даних через Wi-Fi/LoRaWAN. Автономність до 5 років на одному заряді.</p>
+                    </div>
+                    <div class="info-block">
+                        <h4>Система моніторингу</h4>
+                        <p>Детекція вологи, вібраційних навантажень та температурних аномалій під конструкцією.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer>
