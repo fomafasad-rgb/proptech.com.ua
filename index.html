@@ -142,11 +142,6 @@
         }
         .info-block p { font-size: 0.85rem; color: #888; line-height: 1.6; }
 
-        footer {
-            padding: 40px; text-align: center; border-top: 1px solid var(--grid);
-            font-size: 0.7rem; color: #333; letter-spacing: 2px;
-        }
-
         /* Мобільна адаптація */
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
@@ -154,6 +149,84 @@
             .blueprint-container { grid-template-columns: 1fr; }
             .blueprint-header { text-align: center; }
             .blueprint-header h2 { font-size: 1.8rem; }
+            .smart-concept h2 { font-size: 1.5rem; }
+        }
+
+        /* --- НОВІ СТИЛІ ДЛЯ ТЕКСТОВОГО БЛОКУ --- */
+        .smart-concept {
+            padding: 80px 5%;
+            background: var(--bg);
+            border-top: 1px solid var(--grid);
+            position: relative;
+            z-index: 10;
+        }
+        .smart-concept-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .smart-concept h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 30px;
+            text-transform: uppercase;
+        }
+        .smart-quote {
+            padding: 25px 30px;
+            border-left: 4px solid var(--primary);
+            background: rgba(255, 215, 0, 0.03);
+            font-style: italic;
+            color: #ccc;
+            line-height: 1.8;
+            margin-bottom: 50px;
+            font-size: 1.05rem;
+        }
+        .smart-text-block {
+            margin-bottom: 45px;
+        }
+        .smart-text-block h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+        .smart-text-block p {
+            color: #888;
+            line-height: 1.8;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+        .smart-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .smart-list li {
+            color: #888;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            padding: 20px;
+            background: rgba(255, 215, 0, 0.02);
+            border: 1px solid var(--grid);
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .smart-list li:hover {
+            border-color: rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.05);
+        }
+        .smart-list li strong {
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        footer {
+            padding: 40px; text-align: center; border-top: 1px solid var(--grid);
+            font-size: 0.7rem; color: #333; letter-spacing: 2px;
         }
     </style>
 </head>
@@ -252,7 +325,31 @@
                 </div>
             </div>
         </section>
-    </main>
+
+        <section class="smart-concept">
+            <div class="smart-concept-container">
+                <h2>SmartPlanka: Цифровий контур вашої будівлі</h2>
+                
+                <div class="smart-quote">
+                    <ul class="smart-list">
+                        <li>
+                            <strong>🛡️ Активний моніторинг:</strong><br>
+                            Вбудовані датчики вологості та температури виявляють мікропротікання до того, як вони стануть катастрофою.
+                        </li>
+                        <li>
+                            <strong>🧠 Інтеграція з Home Assistant:</strong><br>
+                            Ваша покрівля стає частиною екосистеми «Розумного будинку». Отримуйте сповіщення прямо на смартфон у реальному часі.
+                        </li>
+                        <li>
+                            <strong>⚡ Превентивний захист:</strong><br>
+                            Можливість автоматичного керування антикриговими системами. Метал «знає», коли треба ввімкнути підігрів.
+                        </li>
+                    </ul>
+                </div>
+                </div>
+            </div>
+        </section>
+        </main>
 
     <footer>
         &copy; 2026 DIGITALBUD | PROPTECH LAB | SECURE CONNECTION 256-BIT
