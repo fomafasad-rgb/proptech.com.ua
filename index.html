@@ -88,7 +88,7 @@
         .fingerprint svg { width: 40px; fill: var(--primary); }
         .fingerprint:hover { box-shadow: 0 0 20px var(--primary); transform: scale(1.05); }
         
-        /* Секції технарські */
+        /* Секції технарські (Текстові) */
         .tech-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2px; background: var(--grid); padding: 2px;
@@ -102,126 +102,38 @@
         .tech-card p { font-size: 0.85rem; color: #888; line-height: 1.8; }
         .tech-card .value { font-size: 1.5rem; font-weight: 900; color: #fff; margin: 15px 0; }
 
-        /* Секція креслення SmartPlanka */
-        .blueprint-section {
-            padding: 80px 5%;
-            border-top: 1px solid var(--grid);
-            background: rgba(255,215,0,0.01);
-            position: relative;
-            z-index: 10;
+        /* Секції з картинками */
+        .image-card {
+            background: var(--bg);
+            border: 1px solid transparent;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
-        .blueprint-header { margin-bottom: 50px; text-align: left; }
-        .bp-label { font-size: 0.7rem; color: var(--primary); opacity: 0.5; letter-spacing: 2px; display: block; margin-bottom: 10px; }
-        .blueprint-header h2 { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; color: #fff; text-transform: uppercase; }
-        .blueprint-header h2 span { color: var(--primary); text-shadow: var(--glow); }
-        
-        .blueprint-container {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 50px;
-            align-items: center;
+        .image-card:hover { border-color: var(--primary); background: rgba(255, 215, 0, 0.02); }
+        .image-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--grid);
+            filter: grayscale(80%) sepia(30%) hue-rotate(10deg);
+            transition: filter 0.5s ease, transform 0.5s ease;
         }
-        .blueprint-view {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--grid);
+        .image-card:hover img {
+            filter: grayscale(0%);
+            transform: scale(1.03);
+        }
+        .image-card-content {
             padding: 30px;
-            border-radius: 5px;
-            position: relative;
         }
-        .bp-svg { width: 100%; height: auto; display: block; }
-        
-        .blueprint-info { display: flex; flex-direction: column; gap: 30px; }
-        .info-block h4 { 
-            font-family: 'Orbitron', sans-serif; 
-            color: var(--primary); 
-            margin-bottom: 10px; 
-            font-size: 1.1rem;
-            border-left: 2px solid var(--primary);
-            padding-left: 15px;
-            text-transform: uppercase;
-        }
-        .info-block p { font-size: 0.85rem; color: #888; line-height: 1.6; }
+        .image-card h3 { color: var(--primary); font-family: 'Orbitron', sans-serif; margin-bottom: 15px; font-size: 1rem; }
+        .image-card p { font-size: 0.85rem; color: #888; line-height: 1.8; }
 
         /* Мобільна адаптація */
         @media (max-width: 768px) {
             h1 { font-size: 2.5rem; }
             .tech-grid { grid-template-columns: 1fr; }
-            .blueprint-container { grid-template-columns: 1fr; }
-            .blueprint-header { text-align: center; }
-            .blueprint-header h2 { font-size: 1.8rem; }
-            .smart-concept h2 { font-size: 1.5rem; }
-        }
-
-        /* --- НОВІ СТИЛІ ДЛЯ ТЕКСТОВОГО БЛОКУ --- */
-        .smart-concept {
-            padding: 80px 5%;
-            background: var(--bg);
-            border-top: 1px solid var(--grid);
-            position: relative;
-            z-index: 10;
-        }
-        .smart-concept-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .smart-concept h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
-            color: var(--primary);
-            margin-bottom: 30px;
-            text-transform: uppercase;
-        }
-        .smart-quote {
-            padding: 25px 30px;
-            border-left: 4px solid var(--primary);
-            background: rgba(255, 215, 0, 0.03);
-            font-style: italic;
-            color: #ccc;
-            line-height: 1.8;
-            margin-bottom: 50px;
-            font-size: 1.05rem;
-        }
-        .smart-text-block {
-            margin-bottom: 45px;
-        }
-        .smart-text-block h3 {
-            font-family: 'Orbitron', sans-serif;
-            color: #fff;
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-        }
-        .smart-text-block p {
-            color: #888;
-            line-height: 1.8;
-            font-size: 0.95rem;
-            margin-bottom: 20px;
-        }
-        .smart-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .smart-list li {
-            color: #888;
-            line-height: 1.6;
-            font-size: 0.95rem;
-            padding: 20px;
-            background: rgba(255, 215, 0, 0.02);
-            border: 1px solid var(--grid);
-            border-radius: 5px;
-            transition: 0.3s;
-        }
-        .smart-list li:hover {
-            border-color: rgba(255, 215, 0, 0.3);
-            background: rgba(255, 215, 0, 0.05);
-        }
-        .smart-list li strong {
-            color: var(--primary);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1rem;
-            display: inline-block;
-            margin-bottom: 5px;
         }
 
         footer {
@@ -276,78 +188,47 @@
                 <div class="value">ACTIVE</div>
                 <p>Створення цифрового двійника об'єкта для прогнозування терміну служби матеріалів та планових ремонтів.</p>
             </div>
+
+            <div class="image-card">
+                <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80" alt="Сенсорний модуль">
+                <div class="image-card-content">
+                    <h3>Сенсорний модуль</h3>
+                    <p>Енергоефективна передача даних через Wi-Fi/LoRaWAN. Автономність до 5 років на одному заряді.</p>
+                </div>
+            </div>
+            
+            <div class="image-card">
+                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80" alt="Система моніторингу">
+                <div class="image-card-content">
+                    <h3>Система моніторингу</h3>
+                    <p>Детекція вологи, вібраційних навантажень та температурних аномалій під конструкцією.</p>
+                </div>
+            </div>
+
+            <div class="image-card">
+                <img src="https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&q=80" alt="Активний моніторинг">
+                <div class="image-card-content">
+                    <h3>🛡️ Активний моніторинг</h3>
+                    <p>Вбудовані датчики вологості та температури виявляють мікропротікання до того, як вони стануть катастрофою.</p>
+                </div>
+            </div>
+
+            <div class="image-card">
+                <img src="https://images.unsplash.com/photo-1558002038-1055907df827?w=800&q=80" alt="Інтеграція з Home Assistant">
+                <div class="image-card-content">
+                    <h3>🧠 Інтеграція з Home Assistant</h3>
+                    <p>Ваша покрівля стає частиною екосистеми «Розумного будинку». Отримуйте сповіщення прямо на смартфон у реальному часі.</p>
+                </div>
+            </div>
+
+            <div class="image-card">
+                <img src="https://images.unsplash.com/photo-1600607688969-a5bfcd646154?w=800&q=80" alt="Превентивний захист - Покрівля">
+                <div class="image-card-content">
+                    <h3>⚡ Превентивний захист</h3>
+                    <p>Можливість автоматичного керування антикриговими системами. Метал «знає», коли треба ввімкнути підігрів.</p>
+                </div>
+            </div>
         </div>
-
-        <section class="blueprint-section">
-            <div class="blueprint-header">
-                <span class="bp-label">[ TECHNICAL_DRAWING_09-A ]</span>
-                <h2>SmartPlanka™ <span>в розрізі</span></h2>
-            </div>
-
-            <div class="blueprint-container">
-                <div class="blueprint-view">
-                    <svg viewBox="0 0 400 300" class="bp-svg">
-                        <path d="M50,250 L50,100 L150,50 L250,50 L350,100 L350,250" fill="none" stroke="var(--primary)" stroke-width="3" stroke-dasharray="5,5"/>
-                        <rect x="180" y="60" width="40" height="30" fill="rgba(255, 215, 0, 0.2)" stroke="var(--primary)" stroke-width="1">
-                            <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite" />
-                        </rect>
-                        <line x1="200" y1="60" x2="200" y2="30" stroke="var(--primary)" stroke-width="2" />
-                        <circle cx="200" cy="30" r="4" fill="var(--primary)" />
-                        
-                        <g class="bp-callout">
-                            <line x1="50" y1="150" x2="20" y2="150" stroke="#555" stroke-width="1"/>
-                            <text x="5" y="145" fill="#888" font-size="10" font-family="'JetBrains Mono', monospace">0.7mm STEEL</text>
-                        </g>
-                        <g class="bp-callout">
-                            <line x1="220" y1="75" x2="280" y2="75" stroke="#555" stroke-width="1"/>
-                            <text x="285" y="80" fill="#888" font-size="10" font-family="'JetBrains Mono', monospace">IoT SENSOR NODE</text>
-                        </g>
-                        <g class="bp-callout">
-                            <line x1="200" y1="30" x2="250" y2="10" stroke="#555" stroke-width="1"/>
-                            <text x="255" y="15" fill="#888" font-size="10" font-family="'JetBrains Mono', monospace">RF TRANSPARENT WINDOW</text>
-                        </g>
-                    </svg>
-                </div>
-
-                <div class="blueprint-info">
-                    <div class="info-block">
-                        <h4>Корпус спецвиробу</h4>
-                        <p>Метал 0.5 – 0.7 мм з полімерним покриттям. Планка виступає захисним екраном та основою для кріплення.</p>
-                    </div>
-                    <div class="info-block">
-                        <h4>Сенсорний модуль</h4>
-                        <p>Енергоефективна передача даних через Wi-Fi/LoRaWAN. Автономність до 5 років на одному заряді.</p>
-                    </div>
-                    <div class="info-block">
-                        <h4>Система моніторингу</h4>
-                        <p>Детекція вологи, вібраційних навантажень та температурних аномалій під конструкцією.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="smart-concept">
-            <div class="smart-concept-container">
-                <h2>SmartPlanka: Цифровий контур вашої будівлі</h2>
-                
-                <div class="smart-quote">
-                    <ul class="smart-list">
-                        <li>
-                            <strong>🛡️ Активний моніторинг:</strong><br>
-                            Вбудовані датчики вологості та температури виявляють мікропротікання до того, як вони стануть катастрофою.
-                        </li>
-                        <li>
-                            <strong>🧠 Інтеграція з Home Assistant:</strong><br>
-                            Ваша покрівля стає частиною екосистеми «Розумного будинку». Отримуйте сповіщення прямо на смартфон у реальному часі.
-                        </li>
-                        <li>
-                            <strong>⚡ Превентивний захист:</strong><br>
-                            Можливість автоматичного керування антикриговими системами. Метал «знає», коли треба ввімкнути підігрів.
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </section>
     </main>
 
     <footer>
@@ -393,7 +274,6 @@
                 ctx.fill();
             });
 
-            // Малюємо лінії між точками
             for(let i = 0; i < dots.length; i++) {
                 for(let j = i + 1; j < dots.length; j++) {
                     let dist = Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y);
