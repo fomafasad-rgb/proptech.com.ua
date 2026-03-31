@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropTech Lab | DigitalBud Monitoring System</title>
+    <title>PropTech Lab | GBUD Digital Monitoring System</title>
+    <meta name="description" content="PropTech Lab GBUD — система моніторингу будівель у реальному часі. IoT-датчики вологості, термічне сканування, Digital Twin, інтеграція з Home Assistant.">
+    
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -65,29 +67,50 @@
 
         .data-stream { font-size: 0.9rem; color: #555; max-width: 600px; margin-bottom: 40px; }
 
-        /* Панель доступу */
+        /* Панель доступу (ОНОВЛЕНА) */
         .access-panel {
             background: rgba(255, 215, 0, 0.03);
             border: 1px solid var(--grid);
             padding: 30px; border-radius: 5px;
             max-width: 400px; width: 100%;
             position: relative; overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         .access-panel::before {
             content: "SECURE ACCESS REQUIRED";
             position: absolute; top: 5px; right: 10px; font-size: 0.5rem; color: var(--primary); opacity: 0.5;
         }
 
+        /* Оновлена кнопка відбитка */
         .fingerprint {
-            width: 80px; height: 80px; margin: 20px auto;
+            width: 90px; height: 90px; margin: 20px auto;
             border: 2px solid var(--primary); border-radius: 50%;
             display: flex; justify-content: center; align-items: center;
-            cursor: pointer; transition: 0.3s;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
+            background: rgba(255, 215, 0, 0.03);
+            overflow: hidden;
         }
-        .fingerprint svg { width: 40px; fill: var(--primary); }
-        .fingerprint:hover { box-shadow: 0 0 20px var(--primary); transform: scale(1.05); }
         
+        .fingerprint::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: var(--primary); box-shadow: 0 0 15px var(--primary);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .fingerprint:hover::after { opacity: 0.8; animation: scan-btn 1.5s infinite; }
+        @keyframes scan-btn { 0% { top: 10%; } 100% { top: 90%; } }
+
+        .fingerprint svg { width: 45px; fill: var(--primary); filter: drop-shadow(0 0 5px var(--primary)); z-index: 2; position: relative;}
+        .fingerprint:hover { box-shadow: 0 0 25px var(--primary); transform: scale(1.05); }
+
+        /* Стани кнопки (Сканування / Відмова) */
+        .fingerprint.scanning { border-color: var(--accent); box-shadow: 0 0 30px var(--accent); }
+        .fingerprint.scanning svg { fill: var(--accent); }
+        
+        .fingerprint.denied { border-color: #ff3333; box-shadow: 0 0 30px #ff3333; }
+        .fingerprint.denied svg { fill: #ff3333; filter: drop-shadow(0 0 10px #ff3333); }
+        .fingerprint.denied::after { display: none; }
+
         /* Секції технарські (Текстові) */
         .tech-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -159,11 +182,17 @@
             <div class="data-stream">Аналіз цілісності фасадних систем та покрівельного пирога через IoT-датчики та термічне сканування.</div>
 
             <div class="access-panel">
-                <div style="font-size: 0.8rem; margin-bottom: 20px;">ВХІД У СИСТЕМУ МОНІТОРИНГУ</div>
+                <div style="font-size: 0.8rem; margin-bottom: 15px; font-weight: bold; letter-spacing: 1px;">ВХІД У СИСТЕМУ МОНІТОРИНГУ</div>
+                
                 <div class="fingerprint" id="loginBtn">
                     <svg viewBox="0 0 24 24"><path d="M12 1c-4.97 0-9 4.03-9 9 0 .55.45 1 1 1s1-.45 1-1c0-3.86 3.14-7 7-7s7 3.14 7 7c0 .55.45 1 1 1s1-.45 1-1c0-4.97-4.03-9-9-9zm-3 9c0-.55.45-1 1-1s1 .45 1 1v3c0 .55-.45 1-1 1s-1-.45-1-1v-3zm3-3c-.55 0-1 .45-1 1v5c0 .55.45 1 1 1s1-.45 1-1V8c0-.55-.45-1-1-1zm3 3c0-.55.45-1 1-1s1 .45 1 1v3c0 .55-.45 1-1 1s-1-.45-1-1v-3z"/></svg>
                 </div>
-                <div style="font-size: 0.6rem; color: #444;">ID: 772-B | LOCALIZATION:Ukraine</div>
+                
+                <div id="accessStatus" style="font-size: 0.7rem; margin: 15px 0; color: #666; min-height: 35px; line-height: 1.5;">
+                    ОЧІКУВАННЯ БІОМЕТРИЧНИХ ДАНИХ...
+                </div>
+                
+                <div style="font-size: 0.6rem; color: #444; border-top: 1px solid #222; padding-top: 15px;">ID: 772-B | LOCALIZATION: Ukraine | AES-256</div>
             </div>
         </section>
 
@@ -232,7 +261,7 @@
     </main>
 
     <footer>
-        &copy; 2026 DIGITALBUD | PROPTECH LAB | SECURE CONNECTION 256-BIT
+        &copy; 2026 GBUD DIGITAL | PROPTECH LAB | SECURE CONNECTION 256-BIT
     </footer>
 
     <script>
@@ -289,9 +318,37 @@
         }
         draw();
 
-        // Імітація входу
-        document.getElementById('loginBtn').addEventListener('click', function() {
-            alert('ACCESS DENIED: Система доступна тільки для зареєстрованих об’єктів GBUD. Зверніться до адміністратора.');
+        // ОНОВЛЕНА Імітація входу (Анімація + Відмова)
+        const loginBtn = document.getElementById('loginBtn');
+        const accessStatus = document.getElementById('accessStatus');
+        let isScanning = false;
+
+        loginBtn.addEventListener('click', function() {
+            if(isScanning) return; // Захист від подвійного кліку
+            isScanning = true;
+
+            // Стан 1: Сканування (Жовтий)
+            loginBtn.classList.remove('denied');
+            loginBtn.classList.add('scanning');
+            loginBtn.style.transform = 'scale(0.95)';
+            accessStatus.innerHTML = '<span style="color: var(--accent);">СКАНУВАННЯ ВІДБИТКА...</span>';
+
+            // Стан 2: Результат через 1.5 секунди (Червоний - Відмова)
+            setTimeout(() => {
+                loginBtn.classList.remove('scanning');
+                loginBtn.classList.add('denied');
+                loginBtn.style.transform = 'scale(1)';
+                
+                accessStatus.innerHTML = '<span style="color: #ff3333; font-weight: bold;">✗ ACCESS DENIED</span><br><span style="font-size: 0.6rem; color: #aaa;">Система доступна тільки для зареєстрованих об’єктів GBUD. Зверніться до адміністратора.</span>';
+                
+                // Скидаємо статус через 4 секунди, щоб можна було "гратися" знову
+                setTimeout(() => {
+                    loginBtn.classList.remove('denied');
+                    accessStatus.innerHTML = 'ОЧІКУВАННЯ БІОМЕТРИЧНИХ ДАНИХ...';
+                    isScanning = false;
+                }, 4000);
+
+            }, 1500);
         });
     </script>
 </body>
