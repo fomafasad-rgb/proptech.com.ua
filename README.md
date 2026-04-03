@@ -1,1 +1,2 @@
-# proptech.com.ua
+# proptech.com
+https://proptech.com.ua
