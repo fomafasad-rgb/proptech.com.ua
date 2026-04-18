@@ -37,7 +37,7 @@
                 const grid = document.getElementById('sensorGrid');
                 
                 if (data.msg === "No data") {
-                    grid.innerHTML = "<div style='color: #444'>[ WAITING FOR SENSOR DATA... ]</div>";
+                    grid.innerHTML = "<div style='color: #444'>[ ОЧІКУВАННЯ ДАНИХ ВІД ОБ'ЄКТІВ... ]</div>";
                     return;
                 }
                 
@@ -49,12 +49,12 @@
                     grid.innerHTML += `
                         <div class="card">
                             <div class="location">${s.location || 'SENSOR-X'}</div>
-                            <div class="val">MOISTURE: ${s.moisture}%</div>
-                            <div class="val">BATTERY: ${s.battery}%</div>
+                            <div class="val">ВОЛОГІСТЬ: ${s.moisture}%</div>
+                            <div class="val">ЗАРЯД: ${s.battery}%</div>
                             <div class="${isCritical ? 'status-warn' : 'status-ok'}">
-                                STATUS: ${isCritical ? 'CRITICAL ALERT' : 'SYSTEM ONLINE'}
+                                СТАТУС: ${isCritical ? 'КРИТИЧНО' : 'ОК'}
                             </div>
-                            <div class="time">LAST UPDATE: ${s.updated ? new Date(s.updated).toLocaleString() : 'N/A'}</div>
+                            <div class="time">ОНОВЛЕНО: ${s.updated ? new Date(s.updated).toLocaleString('uk-UA') : 'N/A'}</div>
                         </div>
                     `;
                 });
@@ -62,8 +62,10 @@
                 console.error(e);
             }
         }
+
         fetchData();
-        setInterval(fetchData, 60000);
+        // Оновлення раз на 1 годину (3600000 мілісекунд)
+        setInterval(fetchData, 3600000);
     </script>
 </body>
 </html>
