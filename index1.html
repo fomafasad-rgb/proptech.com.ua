@@ -3,75 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartPlanka Control</title>
+    <title>SmartPlanka | Monitoring System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        body { background: #0f172a; color: #f8fafc; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 1000px; }
-        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; position: relative; }
-        .location { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; color: #38bdf8; }
+        :root { --primary: #FFD700; --bg: #050505; --grid: rgba(255, 215, 0, 0.05); }
+        body { background: var(--bg); color: #fff; font-family: 'JetBrains Mono', monospace; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 30px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
+        .card { background: rgba(255, 215, 0, 0.02); border: 1px solid var(--grid); padding: 25px; border-radius: 5px; position: relative; transition: 0.3s; }
+        .card:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(255, 215, 0, 0.1); }
+        .location { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1.1rem; margin-bottom: 15px; }
+        .val { font-size: 1.4rem; font-weight: bold; margin: 10px 0; }
         .status-ok { color: #4ade80; }
-        .status-critical { color: #f87171; font-weight: bold; }
-        .time { font-size: 0.8rem; color: #94a3b8; margin-top: 10px; }
-        .btn-refresh { background: #38bdf8; color: #0f172a; padding: 12px 30px; margin-top: 30px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+        .status-warn { color: #f87171; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+        .time { font-size: 0.7rem; color: #555; margin-top: 15px; border-top: 1px solid #111; padding-top: 10px; }
+        .btn-update { background: none; border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; cursor: pointer; font-family: 'Orbitron', sans-serif; margin-top: 40px; transition: 0.3s; }
+        .btn-update:hover { background: var(--primary); color: #000; }
     </style>
 </head>
 <body>
-    <h1>SmartPlanka Dashboard</h1>
+    <h1>[ SYSTEM MONITORING ]</h1>
     <div class="grid" id="sensorGrid"></div>
-    <button class="btn-refresh" onclick="fetchData()">Оновити дані</button>
+    <button class="btn-update" onclick="fetchData()">REFRESH SYSTEM</button>
 
     <script>
-        // Твій новий домен бекенду
         const apiUrl = "https://monitor.proptech.com.ua";
 
         async function fetchData() {
             try {
                 const response = await fetch(apiUrl);
                 const data = await response.json();
+                const grid = document.getElementById('sensorGrid');
                 
                 if (data.msg === "No data") {
-                    document.getElementById('sensorGrid').innerHTML = "<div>Очікуємо перші дані від датчиків...</div>";
+                    grid.innerHTML = "<div style='color: #444'>[ WAITING FOR SENSOR DATA... ]</div>";
                     return;
                 }
                 
-                renderSensors(data);
-            } catch (error) {
-                console.error("Помилка завантаження:", error);
-                document.getElementById('sensorGrid').innerHTML = "<div style='color: #f87171'>Помилка зв'язку з сервером</div>";
+                grid.innerHTML = '';
+                const sensors = Array.isArray(data) ? data : [data];
+                
+                sensors.forEach(s => {
+                    const isCritical = (s.moisture > 40);
+                    grid.innerHTML += `
+                        <div class="card">
+                            <div class="location">${s.location || 'SENSOR-X'}</div>
+                            <div class="val">MOISTURE: ${s.moisture}%</div>
+                            <div class="val">BATTERY: ${s.battery}%</div>
+                            <div class="${isCritical ? 'status-warn' : 'status-ok'}">
+                                STATUS: ${isCritical ? 'CRITICAL ALERT' : 'SYSTEM ONLINE'}
+                            </div>
+                            <div class="time">LAST UPDATE: ${s.updated ? new Date(s.updated).toLocaleString() : 'N/A'}</div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
             }
         }
-
-        function renderSensors(data) {
-            const grid = document.getElementById('sensorGrid');
-            grid.innerHTML = '';
-            
-            // Якщо прийде масив датчиків — пройдемо циклом, якщо один — зробимо масивом
-            const sensors = Array.isArray(data) ? data : [data];
-            
-            sensors.forEach(s => {
-                const moisture = s.moisture || 0;
-                const battery = s.battery || 0;
-                const location = s.location || "Датчик №1";
-                const updated = s.updated ? new Date(s.updated).toLocaleString('uk-UA') : "Щойно";
-                
-                const statusText = moisture > 40 ? "CRITICAL: ВОЛОГА" : "НОРМА";
-                const statusClass = moisture > 40 ? "status-critical" : "status-ok";
-
-                grid.innerHTML += `
-                    <div class="card">
-                        <div class="location">${location}</div>
-                        <div>Вологість: ${moisture}%</div>
-                        <div>Заряд: ${battery}%</div>
-                        <div class="${statusClass}">Статус: ${statusText}</div>
-                        <div class="time">Оновлено: ${updated}</div>
-                    </div>
-                `;
-            });
-        }
-
-        // Автооновлення кожні 30 секунд
         fetchData();
-        setInterval(fetchData, 30000);
+        setInterval(fetchData, 60000);
     </script>
 </body>
 </html>
