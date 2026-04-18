@@ -318,38 +318,34 @@
         }
         draw();
 
-        // ОНОВЛЕНА Імітація входу (Анімація + Відмова)
+               // ОНОВЛЕНА логіка: тепер пускає в систему!
         const loginBtn = document.getElementById('loginBtn');
         const accessStatus = document.getElementById('accessStatus');
         let isScanning = false;
 
         loginBtn.addEventListener('click', function() {
-            if(isScanning) return; // Захист від подвійного кліку
+            if(isScanning) return; 
             isScanning = true;
 
-            // Стан 1: Сканування (Жовтий)
+            // Стан 1: Сканування
             loginBtn.classList.remove('denied');
             loginBtn.classList.add('scanning');
-            loginBtn.style.transform = 'scale(0.95)';
             accessStatus.innerHTML = '<span style="color: var(--accent);">СКАНУВАННЯ ВІДБИТКА...</span>';
 
-            // Стан 2: Результат через 1.5 секунди (Червоний - Відмова)
+            // Стан 2: Успішний вхід через 1.5 сек
             setTimeout(() => {
-                loginBtn.classList.remove('scanning');
-                loginBtn.classList.add('denied');
-                loginBtn.style.transform = 'scale(1)';
+                loginBtn.style.boxShadow = '0 0 40px #4ade80'; // Зелене сяйво
+                loginBtn.style.borderColor = '#4ade80';
+                accessStatus.innerHTML = '<span style="color: #4ade80; font-weight: bold;">✓ ДОСТУП НАДАНО</span>';
                 
-                accessStatus.innerHTML = '<span style="color: #ff3333; font-weight: bold;">✗ ACCESS DENIED</span><br><span style="font-size: 0.6rem; color: #aaa;">Система доступна тільки для зареєстрованих об’єктів GBUD. Зверніться до адміністратора.</span>';
-                
-                // Скидаємо статус через 4 секунди, щоб можна було "гратися" знову
+                // Перехід на твій моніторинг через 1 секунду після успіху
                 setTimeout(() => {
-                    loginBtn.classList.remove('denied');
-                    accessStatus.innerHTML = 'ОЧІКУВАННЯ БІОМЕТРИЧНИХ ДАНИХ...';
-                    isScanning = false;
-                }, 4000);
+                    window.location.href = 'index1.html'; 
+                }, 1000);
 
             }, 1500);
         });
+
     </script>
 </body>
 </html>
