@@ -27,10 +27,15 @@
         async function updateData() {
             try {
                 const res = await fetch(apiUrl);
-                const sensors = await res.json();
+                let sensors = await res.json();
+                
+                if (!Array.isArray(sensors)) sensors = [sensors];
+
                 const container = document.getElementById('container');
 
                 sensors.forEach(s => {
+                    if (!s || !s.location) return;
+                    
                     let card = document.getElementById(`card-${s.location}`);
                     if (!card) {
                         card = document.createElement('div');
@@ -53,7 +58,9 @@
                     
                     updateChart(s.location, s.moisture);
                 });
-            } catch (e) { console.error("Помилка:", e); }
+            } catch (e) { 
+                console.error("Fetch error:", e); 
+            }
         }
 
         function initChart(id) {
@@ -66,6 +73,7 @@
         }
 
         function updateChart(id, val) {
+            if (!charts[id]) return;
             const chart = charts[id];
             chart.data.datasets[0].data.push(val);
             chart.data.datasets[0].data.shift();
