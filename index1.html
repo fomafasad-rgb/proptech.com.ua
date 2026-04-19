@@ -3,69 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartPlanka | Monitoring System</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <title>GBUD | Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #FFD700; --bg: #050505; --grid: rgba(255, 215, 0, 0.05); }
-        body { background: var(--bg); color: #fff; font-family: 'JetBrains Mono', monospace; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        h1 { font-family: 'Orbitron', sans-serif; color: var(--primary); margin-bottom: 30px; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 1200px; }
-        .card { background: rgba(255, 215, 0, 0.02); border: 1px solid var(--grid); padding: 25px; border-radius: 5px; position: relative; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(255, 215, 0, 0.1); }
-        .location { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 1.1rem; margin-bottom: 15px; }
-        .val { font-size: 1.4rem; font-weight: bold; margin: 10px 0; }
-        .status-ok { color: #4ade80; }
-        .status-warn { color: #f87171; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
-        .time { font-size: 0.7rem; color: #555; margin-top: 15px; border-top: 1px solid #111; padding-top: 10px; }
-        .btn-update { background: none; border: 1px solid var(--primary); color: var(--primary); padding: 10px 20px; cursor: pointer; font-family: 'Orbitron', sans-serif; margin-top: 40px; transition: 0.3s; }
-        .btn-update:hover { background: var(--primary); color: #000; }
+        :root { --primary: #FFD700; --bg: #050505; --card-bg: #111; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: var(--card-bg); border: 1px solid #222; border-top: 3px solid var(--primary); padding: 20px; border-radius: 8px; transition: 0.3s; }
+        .card:hover { border-color: var(--primary); }
+        .sensor-id { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        .val-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-family: monospace; font-size: 1.1rem; }
+        canvas { margin-top: 15px; background: rgba(255,215,0,0.02); border-radius: 4px; }
+        .status { font-size: 0.8rem; color: #666; margin-top: 15px; text-align: right; }
+        #error-msg { color: #f87171; text-align: center; margin-bottom: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>[ SYSTEM MONITORING ]</h1>
-    <div class="grid" id="sensorGrid"></div>
-    <button class="btn-update" onclick="fetchData()">REFRESH SYSTEM</button>
+    <h2 style="text-align: center; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;">Система моніторингу SmartPlanka</h2>
+    <div id="error-msg"></div>
+    <div class="grid" id="container"></div>
 
     <script>
         const apiUrl = "https://monitor.proptech.com.ua";
+        const charts = {};
 
-        async function fetchData() {
+        async function updateData() {
             try {
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                const grid = document.getElementById('sensorGrid');
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error("Сервер не відповідає");
                 
-                if (data.msg === "No data") {
-                    grid.innerHTML = "<div style='color: #444'>[ ОЧІКУВАННЯ ДАНИХ ВІД ОБ'ЄКТІВ... ]</div>";
+                let sensors = await res.json();
+                document.getElementById('error-msg').innerText = "";
+
+                // Якщо прийшов один об'єкт замість масиву, робимо з нього масив
+                if (!Array.isArray(sensors)) sensors = [sensors];
+                
+                const container = document.getElementById('container');
+                if (sensors.length === 0) {
+                    container.innerHTML = "<div style='grid-column: 1/-1; text-align: center; color: #444;'>[ ОЧІКУВАННЯ ДАНИХ... ]</div>";
                     return;
                 }
-                
-                grid.innerHTML = '';
-                const sensors = Array.isArray(data) ? data : [data];
-                
+
                 sensors.forEach(s => {
-                    const isCritical = (s.moisture > 40);
-                    grid.innerHTML += `
-                        <div class="card">
-                            <div class="location">${s.location || 'SENSOR-X'}</div>
-                            <div class="val">ВОЛОГІСТЬ: ${s.moisture}%</div>
-                            <div class="val">ЗАРЯД: ${s.battery}%</div>
-                            <div class="${isCritical ? 'status-warn' : 'status-ok'}">
-                                СТАТУС: ${isCritical ? 'КРИТИЧНО' : 'ОК'}
-                            </div>
-                            <div class="time">ОНОВЛЕНО: ${s.updated ? new Date(s.updated).toLocaleString('uk-UA') : 'N/A'}</div>
-                        </div>
-                    `;
+                    // Чистимо ID від пробілів для HTML
+                    const safeId = s.location.replace(/\s+/g, '-');
+                    let card = document.getElementById(`card-${safeId}`);
+                    
+                    if (!card) {
+                        card = document.createElement('div');
+                        card.id = `card-${safeId}`;
+                        card.className = 'card';
+                        card.innerHTML = `
+                            <div class="sensor-id">${s.location}</div>
+                            <div class="val-row"><span>ВОЛОГІСТЬ:</span><span id="m-${safeId}" style="color:#4ade80">0%</span></div>
+                            <div class="val-row"><span>ЗАРЯД:</span><span id="b-${safeId}">0%</span></div>
+                            <canvas id="chart-${safeId}" height="100"></canvas>
+                            <div class="status">UPDATE: <span id="t-${safeId}">-</span></div>
+                        `;
+                        container.appendChild(card);
+                        initChart(safeId);
+                    }
+                    
+                    document.getElementById(`m-${safeId}`).innerText = s.moisture + '%';
+                    document.getElementById(`m-${safeId}`).style.color = s.moisture > 40 ? '#f87171' : '#4ade80';
+                    document.getElementById(`b-${safeId}`).innerText = s.battery + '%';
+                    document.getElementById(`t-${safeId}`).innerText = new Date(s.updated).toLocaleTimeString();
+                    
+                    updateChart(safeId, s.moisture);
                 });
             } catch (e) {
-                console.error(e);
+                document.getElementById('error-msg').innerText = "ПОМИЛКА ЗВ'ЯЗКУ: " + e.message;
             }
         }
 
-        fetchData();
-        // Оновлення раз на 1 годину (3600000 мілісекунд)
-        setInterval(fetchData, 3600000);
+        function initChart(id) {
+            const ctx = document.getElementById(`chart-${id}`).getContext('2d');
+            charts[id] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['', '', '', '', '', '', '', '', '', ''],
+                    datasets: [{
+                        data: [null, null, null, null, null, null, null, null, null, null],
+                        borderColor: '#FFD700',
+                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { display: false }, 
+                        y: { min: 0, max: 100, ticks: { display: false }, grid: { display: false } } 
+                    },
+                    animation: { duration: 400 }
+                }
+            });
+        }
+
+        function updateChart(id, val) {
+            const chart = charts[id];
+            chart.data.datasets[0].data.push(val);
+            if (chart.data.datasets[0].data.length > 10) {
+                chart.data.datasets[0].data.shift();
+            }
+            chart.update();
+        }
+
+        setInterval(updateData, 5000);
+        updateData();
     </script>
 </body>
 </html>
