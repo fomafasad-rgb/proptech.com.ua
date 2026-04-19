@@ -3,76 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBUD | Monitoring</title>
+    <title>GBUD | Pro-Monitoring</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #FFD700; --bg: #050505; --card-bg: #111; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: var(--card-bg); border: 1px solid #222; border-top: 3px solid var(--primary); padding: 20px; border-radius: 8px; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); }
-        .sensor-id { font-size: 1.2rem; font-weight: bold; color: var(--primary); margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        .val-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-family: monospace; font-size: 1.1rem; }
-        canvas { margin-top: 15px; background: rgba(255,215,0,0.02); border-radius: 4px; }
-        .status { font-size: 0.8rem; color: #666; margin-top: 15px; text-align: right; }
-        #error-msg { color: #f87171; text-align: center; margin-bottom: 20px; font-weight: bold; }
+        :root { --primary: #FFD700; --bg: #050505; --card-bg: #111; --text-dim: #666; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; padding: 20px; margin: 0; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h2 { color: var(--primary); text-transform: uppercase; letter-spacing: 3px; margin: 0; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+            gap: 20px; 
+            max-width: 1400px; 
+            margin: 0 auto;
+        }
+        
+        .card { 
+            background: var(--card-bg); 
+            border: 1px solid #222; 
+            border-top: 4px solid #333; /* Сірий колір для офлайн стану */
+            padding: 20px; 
+            border-radius: 8px; 
+            transition: all 0.3s ease;
+        }
+        
+        /* Колір, коли датчик оживає */
+        .card.online { border-top-color: var(--primary); border-color: #333; }
+        
+        .sensor-id { 
+            font-size: 1.1rem; 
+            font-weight: bold; 
+            color: var(--text-dim); 
+            margin-bottom: 15px; 
+            display: flex;
+            justify-content: space-between;
+        }
+        .online .sensor-id { color: var(--primary); }
+
+        .val-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-family: monospace; font-size: 1.2rem; }
+        .val-num { color: var(--text-dim); }
+        .online .val-num { color: #fff; }
+
+        canvas { margin-top: 15px; background: rgba(255,215,0,0.02); border-radius: 4px; height: 100px !important; }
+        
+        .status { font-size: 0.75rem; color: var(--text-dim); margin-top: 15px; text-align: right; }
+        .pulse { width: 8px; height: 8px; background: #444; border-radius: 50%; display: inline-block; }
+        .online .pulse { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center; color: var(--primary); text-transform: uppercase; letter-spacing: 2px;">Система моніторингу SmartPlanka</h2>
-    <div id="error-msg"></div>
+
+    <div class="header">
+        <h2>SmartPlanka Control Panel</h2>
+        <p id="net-status" style="font-size: 0.8rem; color: #444;">Синхронізація з Cloudflare...</p>
+    </div>
+
     <div class="grid" id="container"></div>
 
     <script>
         const apiUrl = "https://monitor.proptech.com.ua";
         const charts = {};
+        const sensorCount = 10;
 
-        async function updateData() {
-            try {
-                const res = await fetch(apiUrl);
-                if (!res.ok) throw new Error("Сервер не відповідає");
-                
-                let sensors = await res.json();
-                document.getElementById('error-msg').innerText = "";
-
-                // Якщо прийшов один об'єкт замість масиву, робимо з нього масив
-                if (!Array.isArray(sensors)) sensors = [sensors];
-                
-                const container = document.getElementById('container');
-                if (sensors.length === 0) {
-                    container.innerHTML = "<div style='grid-column: 1/-1; text-align: center; color: #444;'>[ ОЧІКУВАННЯ ДАНИХ... ]</div>";
-                    return;
-                }
-
-                sensors.forEach(s => {
-                    // Чистимо ID від пробілів для HTML
-                    const safeId = s.location.replace(/\s+/g, '-');
-                    let card = document.getElementById(`card-${safeId}`);
-                    
-                    if (!card) {
-                        card = document.createElement('div');
-                        card.id = `card-${safeId}`;
-                        card.className = 'card';
-                        card.innerHTML = `
-                            <div class="sensor-id">${s.location}</div>
-                            <div class="val-row"><span>ВОЛОГІСТЬ:</span><span id="m-${safeId}" style="color:#4ade80">0%</span></div>
-                            <div class="val-row"><span>ЗАРЯД:</span><span id="b-${safeId}">0%</span></div>
-                            <canvas id="chart-${safeId}" height="100"></canvas>
-                            <div class="status">UPDATE: <span id="t-${safeId}">-</span></div>
-                        `;
-                        container.appendChild(card);
-                        initChart(safeId);
-                    }
-                    
-                    document.getElementById(`m-${safeId}`).innerText = s.moisture + '%';
-                    document.getElementById(`m-${safeId}`).style.color = s.moisture > 40 ? '#f87171' : '#4ade80';
-                    document.getElementById(`b-${safeId}`).innerText = s.battery + '%';
-                    document.getElementById(`t-${safeId}`).innerText = new Date(s.updated).toLocaleTimeString();
-                    
-                    updateChart(safeId, s.moisture);
-                });
-            } catch (e) {
-                document.getElementById('error-msg').innerText = "ПОМИЛКА ЗВ'ЯЗКУ: " + e.message;
+        // 1. ПЕРШОЧЕРГОВЕ СТВОРЕННЯ СІТКИ (10 карток)
+        function createStaticGrid() {
+            const container = document.getElementById('container');
+            for (let i = 1; i <= sensorCount; i++) {
+                const id = `SENSOR-${i.toString().padStart(2, '0')}`;
+                const card = document.createElement('div');
+                card.id = `card-${id}`;
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="sensor-id">
+                        <span>${id}</span>
+                        <span class="pulse"></span>
+                    </div>
+                    <div class="val-row"><span>ВОЛОГА:</span><span id="m-${id}" class="val-num">--%</span></div>
+                    <div class="val-row"><span>ЗАРЯД:</span><span id="b-${id}" class="val-num">--%</span></div>
+                    <canvas id="chart-${id}"></canvas>
+                    <div class="status" id="s-${id}">СТАТУС: ОФЛАЙН</div>
+                `;
+                container.appendChild(card);
+                initChart(id);
             }
         }
 
@@ -83,35 +96,65 @@
                 data: {
                     labels: ['', '', '', '', '', '', '', '', '', ''],
                     datasets: [{
-                        data: [null, null, null, null, null, null, null, null, null, null],
+                        data: Array(10).fill(null),
                         borderColor: '#FFD700',
-                        backgroundColor: 'rgba(255, 215, 0, 0.1)',
-                        fill: true,
-                        tension: 0.4,
                         borderWidth: 2,
-                        pointRadius: 2
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: false
                     }]
                 },
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: { 
                         x: { display: false }, 
-                        y: { min: 0, max: 100, ticks: { display: false }, grid: { display: false } } 
+                        y: { min: 0, max: 100, display: false } 
                     },
-                    animation: { duration: 400 }
+                    animation: false
                 }
             });
+        }
+
+        // 2. ОНОВЛЕННЯ ДАНИХ У ГОТОВИХ КАРТКАХ
+        async function updateData() {
+            try {
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error();
+                
+                let sensors = await res.json();
+                if (!Array.isArray(sensors)) sensors = [sensors];
+
+                sensors.forEach(s => {
+                    const id = s.location;
+                    const card = document.getElementById(`card-${id}`);
+                    
+                    if (card) {
+                        card.classList.add('online');
+                        document.getElementById(`m-${id}`).innerText = s.moisture + '%';
+                        document.getElementById(`m-${id}`).style.color = s.moisture > 40 ? '#f87171' : '#4ade80';
+                        document.getElementById(`b-${id}`).innerText = s.battery + '%';
+                        document.getElementById(`s-${id}`).innerText = 'ОНОВЛЕНО: ' + new Date(s.updated).toLocaleTimeString();
+                        
+                        updateChart(id, s.moisture);
+                    }
+                });
+                document.getElementById('net-status').innerText = "ЗВ'ЯЗОК ВСТАНОВЛЕНО | " + new Date().toLocaleTimeString();
+            } catch (e) {
+                document.getElementById('net-status').innerText = "ПОМИЛКА ЗВ'ЯЗКУ";
+            }
         }
 
         function updateChart(id, val) {
             const chart = charts[id];
             chart.data.datasets[0].data.push(val);
-            if (chart.data.datasets[0].data.length > 10) {
-                chart.data.datasets[0].data.shift();
-            }
+            chart.data.datasets[0].data.shift();
             chart.update();
         }
 
+        // Запуск
+        createStaticGrid();
         setInterval(updateData, 5000);
         updateData();
     </script>
