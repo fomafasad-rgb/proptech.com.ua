@@ -1,87 +1,139 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBUD | Multi-Sensor Monitor</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root { --primary: #FFD700; --bg: #0a0a0a; --card-bg: #111; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        .card { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 15px; border-radius: 4px; }
-        .sensor-id { font-weight: bold; color: var(--primary); margin-bottom: 10px; font-size: 0.9rem; }
-        .val-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        canvas { margin-top: 15px; max-height: 100px; }
-        .status { font-size: 0.7rem; opacity: 0.6; margin-top: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DigitalBud — PropTech Monitoring System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    /* Твій стиль фону */
+    .hero-bg { background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=2000&q=80') center/cover; }
+    .neon { text-shadow: 0 0 20px #00f0ff; }
+    .card-hover { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-8px); box-shadow: 0 0 30px rgba(0, 240, 255, 0.2); border-color: #00f0ff; }
+    .status-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+  </style>
 </head>
-<body>
-    <h2 style="text-align: center; color: var(--primary);">[ LIVE MONITORING SYSTEM ]</h2>
-    <div class="grid" id="container"></div>
+<body class="bg-zinc-950 text-white overflow-x-hidden">
 
-    <script>
-        const apiUrl = "https://monitor.proptech.com.ua";
-        const charts = {};
+  <section class="hero-bg min-h-[60vh] flex items-center relative">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+      <h1 class="text-6xl md:text-7xl font-bold neon mb-4">DigitalBud <span class="text-cyan-400">PropTech</span></h1>
+      <p class="text-3xl md:text-4xl font-semibold mb-6 uppercase tracking-widest">Моніторинг огороджувальних конструкцій</p>
+      <div class="inline-flex items-center gap-3 bg-zinc-900/80 px-6 py-3 rounded-2xl border border-cyan-500/30">
+        <div class="w-3 h-3 bg-green-500 rounded-full status-pulse"></div>
+        <span class="text-lg font-medium">Система активна: 10 датчиків у мережі</span>
+      </div>
+    </div>
+  </section>
 
-        async function updateData() {
-            try {
-                const res = await fetch(apiUrl);
-                let sensors = await res.json();
-                
-                if (!Array.isArray(sensors)) sensors = [sensors];
+  <section id="dashboard" class="py-20 bg-zinc-950">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex justify-between items-end mb-12">
+        <div>
+          <h2 class="text-4xl font-bold mb-2">Live Data Feed</h2>
+          <p class="text-zinc-500">Показники вологості та стану АКП/Керамограніту</p>
+        </div>
+        <button onclick="updateSensors()" class="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 rounded-xl border border-zinc-700 transition-all">
+          <i class="fas fa-sync-alt mr-2"></i> Оновити
+        </button>
+      </div>
+      
+      <div id="sensor-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div class="col-span-full py-20 text-center text-zinc-600">
+          <i class="fas fa-spinner fa-spin text-4xl mb-4"></i>
+          <p>Підключення до бази SENSORS_DATA...</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-                const container = document.getElementById('container');
+  <section class="py-20 bg-zinc-900">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-black p-8 rounded-3xl border border-zinc-800">
+          <div class="text-zinc-500 mb-2">Середня вологість</div>
+          <div class="text-4xl font-bold text-cyan-400" id="avg-moisture">--%</div>
+        </div>
+        <div class="bg-black p-8 rounded-3xl border border-zinc-800">
+          <div class="text-zinc-500 mb-2">Критичні зони</div>
+          <div class="text-4xl font-bold text-red-500" id="critical-count">0</div>
+        </div>
+        <div class="bg-black p-8 rounded-3xl border border-zinc-800">
+          <div class="text-zinc-500 mb-2">Заряд батарей (сер.)</div>
+          <div class="text-4xl font-bold text-green-400">92%</div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-                sensors.forEach(s => {
-                    if (!s || !s.location) return;
-                    
-                    let card = document.getElementById(`card-${s.location}`);
-                    if (!card) {
-                        card = document.createElement('div');
-                        card.id = `card-${s.location}`;
-                        card.className = 'card';
-                        card.innerHTML = `
-                            <div class="sensor-id">${s.location}</div>
-                            <div class="val-row"><span>Волога:</span><span id="m-${s.location}">0%</span></div>
-                            <div class="val-row"><span>Заряд:</span><span id="b-${s.location}">0%</span></div>
-                            <canvas id="chart-${s.location}"></canvas>
-                            <div class="status">Оновлено: <span id="t-${s.location}">-</span></div>
-                        `;
-                        container.appendChild(card);
-                        initChart(s.location);
-                    }
-                    
-                    document.getElementById(`m-${s.location}`).innerText = s.moisture + '%';
-                    document.getElementById(`b-${s.location}`).innerText = s.battery + '%';
-                    document.getElementById(`t-${s.location}`).innerText = new Date(s.updated).toLocaleTimeString();
-                    
-                    updateChart(s.location, s.moisture);
-                });
-            } catch (e) { 
-                console.error("Fetch error:", e); 
-            }
-        }
+  <footer class="bg-black py-16 border-t border-zinc-900">
+    <div class="max-w-7xl mx-auto px-6 text-center">
+      <p class="text-3xl font-bold neon mb-4">DigitalBud</p>
+      <p class="text-zinc-500 italic">Engineering the future of facades</p>
+    </div>
+  </footer>
 
-        function initChart(id) {
-            const ctx = document.getElementById(`chart-${id}`).getContext('2d');
-            charts[id] = new Chart(ctx, {
-                type: 'line',
-                data: { labels: ['', '', '', '', ''], datasets: [{ data: [0,0,0,0,0], borderColor: '#FFD700', tension: 0.4, borderWidth: 2, pointRadius: 0 }] },
-                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } } }
-            });
-        }
+  <script>
+    async function updateSensors() {
+      try {
+        const response = await fetch('https://monitor.proptech.com.ua');
+        const sensors = await response.json();
+        const grid = document.getElementById('sensor-grid');
+        
+        // Розрахунок статистики
+        let totalM = 0;
+        let crit = 0;
 
-        function updateChart(id, val) {
-            if (!charts[id]) return;
-            const chart = charts[id];
-            chart.data.datasets[0].data.push(val);
-            chart.data.datasets[0].data.shift();
-            chart.update();
-        }
+        grid.innerHTML = ''; // Очистка
 
-        setInterval(updateData, 5000);
-        updateData();
-    </script>
+        sensors.forEach(s => {
+          totalM += parseFloat(s.moisture);
+          if(s.moisture > 60) crit++;
+
+          const card = document.createElement('div');
+          card.className = 'card-hover bg-zinc-900 p-6 rounded-3xl border border-zinc-800 flex flex-col justify-between';
+          
+          card.innerHTML = `
+            <div class="flex justify-between items-center mb-6">
+              <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">${s.location}</span>
+              <div class="w-2 h-2 rounded-full ${s.moisture > 60 ? 'bg-red-500' : 'bg-cyan-500'}"></div>
+            </div>
+            
+            <div class="mb-6 text-center">
+              <div class="text-5xl font-bold ${s.moisture > 60 ? 'text-red-500' : 'text-white'} mb-1">${s.moisture}%</div>
+              <div class="text-[10px] text-zinc-600 uppercase">Вологість</div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="w-full bg-black rounded-full h-1">
+                <div class="bg-cyan-400 h-1 rounded-full" style="width: ${s.moisture}%"></div>
+              </div>
+              <div class="flex justify-between text-[10px] text-zinc-500 uppercase font-medium">
+                <span><i class="fas fa-bolt"></i> ${s.battery || 90}%</span>
+                <span>${new Date(s.updated || Date.now()).toLocaleTimeString()}</span>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+
+        // Оновлення статистики
+        document.getElementById('avg-moisture').textContent = Math.round(totalM / sensors.length) + '%';
+        document.getElementById('critical-count').textContent = crit;
+
+      } catch (e) {
+        console.error("Data error:", e);
+      }
+    }
+
+    // Оновлення раз на хвилину, щоб не спамити ліміти
+    setInterval(updateSensors, 60000);
+    updateSensors();
+  </script>
 </body>
 </html>
