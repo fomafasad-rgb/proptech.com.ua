@@ -3,77 +3,349 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBUD | Multi-Sensor Monitor</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>PropTech Lab | GBUD Digital Monitoring System</title>
+    <meta name="description" content="PropTech Lab GBUD — система моніторингу будівель у реальному часі. IoT-датчики вологості, термічне сканування, Digital Twin, інтеграція з Home Assistant.">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #FFD700; --bg: #0a0a0a; --card-bg: #111; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        .card { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 15px; border-radius: 4px; }
-        .sensor-id { font-weight: bold; color: var(--primary); margin-bottom: 10px; font-size: 0.9rem; }
-        .val-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        canvas { margin-top: 15px; max-height: 100px; }
-        .status { font-size: 0.7rem; opacity: 0.6; margin-top: 10px; }
+        :root {
+            --primary: #FFD700; /* Золото */
+            --bg: #050505;
+            --accent: #FF8C00;
+            --grid: rgba(255, 215, 0, 0.05);
+            --glow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* Фонова сітка "Матриця" */
+        #bg-canvas {
+            position: fixed; inset: 0; z-index: -1; opacity: 0.6;
+        }
+
+        header {
+            padding: 20px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--grid);
+            backdrop-filter: blur(10px);
+            position: fixed; width: 100%; top: 0; z-index: 100;
+        }
+
+        .system-status { font-size: 0.7rem; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
+        .system-status span { animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .logo { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.5rem; color: var(--primary); text-decoration: none; }
+
+        /* Hero секція */
+        .hero {
+            height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 0 20px;
+            position: relative;
+        }
+
+        .scanner-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--primary); box-shadow: 0 0 20px var(--primary);
+            animation: scan 4s linear infinite; z-index: 5; opacity: 0.5;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 8vw, 5rem);
+            text-transform: uppercase; letter-spacing: 5px; color: var(--primary);
+            text-shadow: var(--glow); margin-bottom: 10px;
+        }
+
+        .data-stream { font-size: 0.9rem; color: #555; max-width: 600px; margin-bottom: 40px; }
+
+        /* Панель доступу (ОНОВЛЕНА) */
+        .access-panel {
+            background: rgba(255, 215, 0, 0.03);
+            border: 1px solid var(--grid);
+            padding: 30px; border-radius: 5px;
+            max-width: 400px; width: 100%;
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .access-panel::before {
+            content: "SECURE ACCESS REQUIRED";
+            position: absolute; top: 5px; right: 10px; font-size: 0.5rem; color: var(--primary); opacity: 0.5;
+        }
+
+        /* Оновлена кнопка відбитка */
+        .fingerprint {
+            width: 90px; height: 90px; margin: 20px auto;
+            border: 2px solid var(--primary); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            background: rgba(255, 215, 0, 0.03);
+            overflow: hidden;
+        }
+        
+        .fingerprint::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
+            background: var(--primary); box-shadow: 0 0 15px var(--primary);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .fingerprint:hover::after { opacity: 0.8; animation: scan-btn 1.5s infinite; }
+        @keyframes scan-btn { 0% { top: 10%; } 100% { top: 90%; } }
+
+        .fingerprint svg { width: 45px; fill: var(--primary); filter: drop-shadow(0 0 5px var(--primary)); z-index: 2; position: relative;}
+        .fingerprint:hover { box-shadow: 0 0 25px var(--primary); transform: scale(1.05); }
+
+        /* Стани кнопки (Сканування / Відмова) */
+        .fingerprint.scanning { border-color: var(--accent); box-shadow: 0 0 30px var(--accent); }
+        .fingerprint.scanning svg { fill: var(--accent); }
+        
+        .fingerprint.denied { border-color: #ff3333; box-shadow: 0 0 30px #ff3333; }
+        .fingerprint.denied svg { fill: #ff3333; filter: drop-shadow(0 0 10px #ff3333); }
+        .fingerprint.denied::after { display: none; }
+
+        /* Секції технарські (Текстові) */
+        .tech-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+            gap: 2px; background: var(--grid); padding: 2px;
+        }
+        .tech-card {
+            background: var(--bg); padding: 40px;
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .tech-card:hover { border-color: var(--primary); background: rgba(255, 215, 0, 0.02); }
+        .tech-card h3 { color: var(--primary); font-family: 'Orbitron', sans-serif; margin-bottom: 15px; font-size: 1rem; }
+        .tech-card p { font-size: 0.85rem; color: #888; line-height: 1.8; }
+        .tech-card .value { font-size: 1.5rem; font-weight: 900; color: #fff; margin: 15px 0; }
+
+        /* Секції з картинками */
+        .image-card {
+            background: var(--bg);
+            border: 1px solid transparent;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .image-card:hover { border-color: var(--primary); background: rgba(255, 215, 0, 0.02); }
+        .image-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--grid);
+            filter: grayscale(80%) sepia(30%) hue-rotate(10deg);
+            transition: filter 0.5s ease, transform 0.5s ease;
+        }
+        .image-card:hover img {
+            filter: grayscale(0%);
+            transform: scale(1.03);
+        }
+        .image-card-content {
+            padding: 30px;
+        }
+        .image-card h3 { color: var(--primary); font-family: 'Orbitron', sans-serif; margin-bottom: 15px; font-size: 1rem; }
+        .image-card p { font-size: 0.85rem; color: #888; line-height: 1.8; }
+
+        /* Мобільна адаптація */
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .tech-grid { grid-template-columns: 1fr; }
+        }
+
+        footer {
+            padding: 40px; text-align: center; border-top: 1px solid var(--grid);
+            font-size: 0.7rem; color: #333; letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
-    <h2 style="text-align: center; color: var(--primary);">[ LIVE MONITORING SYSTEM ]</h2>
-    <div class="grid" id="container"></div>
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="scanner-line"></div>
+
+    <header>
+        <a href="#" class="logo">PROPTECH LAB</a>
+        <div class="system-status"><span>●</span> SYSTEM ONLINE: 24/7 MONITORING</div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div style="font-size: 0.6rem; color: var(--primary); margin-bottom: 10px;">[ INITIALIZING DIGITAL TWIN... ]</div>
+            <h1>GBUD <span>LAB</span></h1>
+            <div class="data-stream">Аналіз цілісності фасадних систем та покрівельного пирога через IoT-датчики та термічне сканування.</div>
+
+            <div class="access-panel">
+                <div style="font-size: 0.8rem; margin-bottom: 15px; font-weight: bold; letter-spacing: 1px;">ВХІД У СИСТЕМУ МОНІТОРИНГУ</div>
+                
+                <div class="fingerprint" id="loginBtn">
+                    <svg viewBox="0 0 24 24"><path d="M12 1c-4.97 0-9 4.03-9 9 0 .55.45 1 1 1s1-.45 1-1c0-3.86 3.14-7 7-7s7 3.14 7 7c0 .55.45 1 1 1s1-.45 1-1c0-4.97-4.03-9-9-9zm-3 9c0-.55.45-1 1-1s1 .45 1 1v3c0 .55-.45 1-1 1s-1-.45-1-1v-3zm3-3c-.55 0-1 .45-1 1v5c0 .55.45 1 1 1s1-.45 1-1V8c0-.55-.45-1-1-1zm3 3c0-.55.45-1 1-1s1 .45 1 1v3c0 .55-.45 1-1 1s-1-.45-1-1v-3z"/></svg>
+                </div>
+                
+                <div id="accessStatus" style="font-size: 0.7rem; margin: 15px 0; color: #666; min-height: 35px; line-height: 1.5;">
+                    ОЧІКУВАННЯ БІОМЕТРИЧНИХ ДАНИХ...
+                </div>
+                
+                <div style="font-size: 0.6rem; color: #444; border-top: 1px solid #222; padding-top: 15px;">ID: 772-B | LOCALIZATION: Ukraine | AES-256</div>
+            </div>
+        </section>
+
+        <div class="tech-grid">
+            <div class="tech-card">
+                <h3>Thermal Scanning</h3>
+                <div class="value">98.4%</div>
+                <p>Автоматична детекція містків холоду та дефектів утеплення фасадів НВФ.</p>
+            </div>
+            <div class="tech-card">
+                <h3>Moisture IoT</h3>
+                <div class="value">0.02%</div>
+                <p>Датчики вологості в покрівельному пирозі. Моніторинг протікань на ранніх стадіях до появи видимих пошкоджень.</p>
+            </div>
+            <div class="tech-card">
+                <h3>Stress Analysis</h3>
+                <div class="value">NORMAL</div>
+                <p>Аналіз напруги металоконструкцій та підсистем фасаду під впливом вітрових навантажень у реальному часі.</p>
+            </div>
+            <div class="tech-card">
+                <h3>Digital Twin</h3>
+                <div class="value">ACTIVE</div>
+                <p>Створення цифрового двійника об'єкта для прогнозування терміну служби матеріалів та планових ремонтів.</p>
+            </div>
+
+            <div class="image-card">
+                <img src="img/1.jpg" alt="Сенсорний модуль">
+                <div class="image-card-content">
+                    <h3>Сенсорний модуль</h3>
+                    <p>Енергоефективна передача даних через Wi-Fi/LoRaWAN. Автономність до 5 років на одному заряді.</p>
+                </div>
+            </div>
+            
+            <div class="image-card">
+                <img src="img/2.jpg" alt="Система моніторингу">
+                <div class="image-card-content">
+                    <h3>Система моніторингу</h3>
+                    <p>Детекція вологи, вібраційних навантажень та температурних аномалій під конструкцією.</p>
+                </div>
+            </div>
+
+            <div class="image-card">
+                <img src="img/3.jpg" alt="Активний моніторинг">
+                <div class="image-card-content">
+                    <h3>🛡️ Активний моніторинг</h3>
+                    <p>Вбудовані датчики вологості та температури виявляють мікропротікання до того, як вони стануть катастрофою.</p>
+                </div>
+            </div>
+
+            <div class="image-card">
+                <img src="img/4.jpg" alt="Інтеграція з Home Assistant">
+                <div class="image-card-content">
+                    <h3>🧠 Інтеграція з Home Assistant</h3>
+                    <p>Ваша покрівля стає частиною екосистеми «Розумного будинку». Отримуйте сповіщення прямо на смартфон у реальному часі.</p>
+                </div>
+            </div>
+
+            <div class="image-card">
+                <img src="img/5.jpg" alt="Превентивний захист - Покрівля">
+                <div class="image-card-content">
+                    <h3>⚡ Превентивний захист</h3>
+                    <p>Можливість автоматичного керування антикриговими системами. Метал «знає», коли треба ввімкнути підігрів.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2026 GBUD DIGITAL | PROPTECH LAB | SECURE CONNECTION 256-BIT
+    </footer>
 
     <script>
-        const apiUrl = "https://monitor.proptech.com.ua";
-        const charts = {};
+        // Ефект фонової сітки (Матриця/Техно)
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
 
-        async function updateData() {
-            try {
-                const res = await fetch(apiUrl);
-                const sensors = await res.json();
-                const container = document.getElementById('container');
-
-                sensors.forEach(s => {
-                    let card = document.getElementById(`card-${s.location}`);
-                    if (!card) {
-                        card = document.createElement('div');
-                        card.id = `card-${s.location}`;
-                        card.className = 'card';
-                        card.innerHTML = `
-                            <div class="sensor-id">${s.location}</div>
-                            <div class="val-row"><span>Волога:</span><span id="m-${s.location}">0%</span></div>
-                            <div class="val-row"><span>Заряд:</span><span id="b-${s.location}">0%</span></div>
-                            <canvas id="chart-${s.location}"></canvas>
-                            <div class="status">Оновлено: <span id="t-${s.location}">-</span></div>
-                        `;
-                        container.appendChild(card);
-                        initChart(s.location);
-                    }
-                    
-                    document.getElementById(`m-${s.location}`).innerText = s.moisture + '%';
-                    document.getElementById(`b-${s.location}`).innerText = s.battery + '%';
-                    document.getElementById(`t-${s.location}`).innerText = new Date(s.updated).toLocaleTimeString();
-                    
-                    updateChart(s.location, s.moisture);
-                });
-            } catch (e) { console.error("Помилка:", e); }
+        let width, height;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
         }
+        window.addEventListener('resize', resize);
+        resize();
 
-        function initChart(id) {
-            const ctx = document.getElementById(`chart-${id}`).getContext('2d');
-            charts[id] = new Chart(ctx, {
-                type: 'line',
-                data: { labels: ['', '', '', '', ''], datasets: [{ data: [0,0,0,0,0], borderColor: '#FFD700', tension: 0.4, borderWidth: 2, pointRadius: 0 }] },
-                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } } }
+        const dots = [];
+        for(let i = 0; i < 100; i++) {
+            dots.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5
             });
         }
 
-        function updateChart(id, val) {
-            const chart = charts[id];
-            chart.data.datasets[0].data.push(val);
-            chart.data.datasets[0].data.shift();
-            chart.update();
-        }
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.05)';
 
-        setInterval(updateData, 5000);
-        updateData();
+            dots.forEach(d => {
+                d.x += d.vx;
+                d.y += d.vy;
+                if(d.x < 0 || d.x > width) d.vx *= -1;
+                if(d.y < 0 || d.y > height) d.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, 1, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            for(let i = 0; i < dots.length; i++) {
+                for(let j = i + 1; j < dots.length; j++) {
+                    let dist = Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y);
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(dots[i].x, dots[i].y);
+                        ctx.lineTo(dots[j].x, dots[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+               // ОНОВЛЕНА логіка: тепер пускає в систему!
+        const loginBtn = document.getElementById('loginBtn');
+        const accessStatus = document.getElementById('accessStatus');
+        let isScanning = false;
+
+        loginBtn.addEventListener('click', function() {
+            if(isScanning) return; 
+            isScanning = true;
+
+            // Стан 1: Сканування
+            loginBtn.classList.remove('denied');
+            loginBtn.classList.add('scanning');
+            accessStatus.innerHTML = '<span style="color: var(--accent);">СКАНУВАННЯ ВІДБИТКА...</span>';
+
+            // Стан 2: Успішний вхід через 1.5 сек
+            setTimeout(() => {
+                loginBtn.style.boxShadow = '0 0 40px #4ade80'; // Зелене сяйво
+                loginBtn.style.borderColor = '#4ade80';
+                accessStatus.innerHTML = '<span style="color: #4ade80; font-weight: bold;">✓ ДОСТУП НАДАНО</span>';
+                
+                // Перехід на твій моніторинг через 1 секунду після успіху
+                setTimeout(() => {
+                    window.location.href = 'index1.html'; 
+                }, 1000);
+
+            }, 1500);
+        });
+
     </script>
 </body>
 </html>
