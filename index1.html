@@ -3,118 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBUD | Enterprise Monitor</title>
+    <title>GBUD | Multi-Sensor Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #FFD700; --bg: #050505; --card-bg: #111; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; padding: 15px; margin: 0; }
-        
-        .toolbar { 
-            position: sticky; top: 0; z-index: 100; background: rgba(5,5,5,0.9);
-            padding: 15px; border-bottom: 1px solid #222; margin-bottom: 20px;
-            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-        }
-        
-        input { 
-            background: #1a1a1a; border: 1px solid #333; color: #fff; 
-            padding: 10px; border-radius: 5px; flex-grow: 1; outline: none;
-        }
-        input:focus { border-color: var(--primary); }
-
-        .stats-badge { background: #222; padding: 10px 15px; border-radius: 5px; font-size: 0.8rem; border: 1px solid #333; }
-        .stats-badge span { color: var(--primary); font-weight: bold; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
-        
-        .card { 
-            background: var(--card-bg); border: 1px solid #222; padding: 15px; 
-            border-radius: 8px; display: none; /* Ховаємо все за замовчуванням */
-        }
-        .card.visible { display: block; border-left: 4px solid var(--primary); }
-        .card.offline { opacity: 0.5; border-left-color: #444; }
-
-        .sensor-id { font-weight: bold; color: var(--primary); margin-bottom: 10px; font-size: 1.1rem; }
-        .val-row { display: flex; justify-content: space-between; font-family: monospace; font-size: 1.1rem; margin-bottom: 5px; }
-        canvas { height: 80px !important; margin-top: 10px; }
-        .status { font-size: 0.7rem; color: #666; text-align: right; margin-top: 10px; }
+        :root { --primary: #FFD700; --bg: #0a0a0a; --card-bg: #111; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        .card { background: var(--card-bg); border-left: 4px solid var(--primary); padding: 15px; border-radius: 4px; }
+        .sensor-id { font-weight: bold; color: var(--primary); margin-bottom: 10px; font-size: 0.9rem; }
+        .val-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        canvas { margin-top: 15px; max-height: 100px; }
+        .status { font-size: 0.7rem; opacity: 0.6; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-    <div class="toolbar">
-        <input type="text" id="searchInput" placeholder="Пошук датчика (напр. SENSOR-02)..." oninput="filterSensors()">
-        <div class="stats-badge">Активні: <span id="onlineCount">0</span></div>
-        <div class="stats-badge">Всього: <span id="totalCount">0</span></div>
-    </div>
-
+    <h2 style="text-align: center; color: var(--primary);">[ LIVE MONITORING SYSTEM ]</h2>
     <div class="grid" id="container"></div>
 
     <script>
         const apiUrl = "https://monitor.proptech.com.ua";
         const charts = {};
-        let allSensorsData = [];
 
         async function updateData() {
             try {
                 const res = await fetch(apiUrl);
-                if (!res.ok) return;
-                allSensorsData = await res.json();
-                renderCards();
-            } catch (e) { console.error(e); }
-        }
-
-        function renderCards() {
-            const container = document.getElementById('container');
-            const searchVal = document.getElementById('searchInput').value.toUpperCase();
-            let online = 0;
-
-            allSensorsData.forEach(s => {
-                const id = s.location;
-                let card = document.getElementById(`card-${id}`);
-
-                if (!card) {
-                    card = document.createElement('div');
-                    card.id = `card-${id}`;
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <div class="sensor-id">${id}</div>
-                        <div class="val-row"><span>ВОЛОГА:</span><span id="m-${id}">--%</span></div>
-                        <div class="val-row"><span>ЗАРЯД:</span><span id="b-${id}">--%</span></div>
-                        <canvas id="chart-${id}"></canvas>
-                        <div class="status" id="s-${id}">--:--:--</div>
-                    `;
-                    container.appendChild(card);
-                    initChart(id);
-                }
-
-                // Логіка видимості: показуємо, якщо відповідає пошуку або якщо є дані
-                const matchesSearch = id.toUpperCase().includes(searchVal);
-                if (matchesSearch) {
-                    card.classList.add('visible');
-                    online++;
-                } else {
-                    card.classList.remove('visible');
-                }
-
-                // Оновлення цифр
-                document.getElementById(`m-${id}`).innerText = s.moisture + '%';
-                document.getElementById(`m-${id}`).style.color = s.moisture > 40 ? '#f87171' : '#4ade80';
-                document.getElementById(`b-${id}`).innerText = s.battery + '%';
-                document.getElementById(`s-${id}`).innerText = 'ОНОВЛЕНО: ' + new Date(s.updated).toLocaleTimeString();
+                let sensors = await res.json();
                 
-                updateChart(id, s.moisture);
-            });
+                // Перевірка формату масиву
+                if (!Array.isArray(sensors)) {
+                    sensors = [sensors];
+                }
 
-            document.getElementById('onlineCount').innerText = online;
-            document.getElementById('totalCount').innerText = allSensorsData.length;
+                const container = document.getElementById('container');
+
+                sensors.forEach(s => {
+                    if (!s || !s.location) return;
+                    
+                    let card = document.getElementById(`card-${s.location}`);
+                    if (!card) {
+                        card = document.createElement('div');
+                        card.id = `card-${s.location}`;
+                        card.className = 'card';
+                        card.innerHTML = `
+                            <div class="sensor-id">${s.location}</div>
+                            <div class="val-row"><span>Волога:</span><span id="m-${s.location}">0%</span></div>
+                            <div class="val-row"><span>Заряд:</span><span id="b-${s.location}">0%</span></div>
+                            <canvas id="chart-${s.location}"></canvas>
+                            <div class="status">Оновлено: <span id="t-${s.location}">-</span></div>
+                        `;
+                        container.appendChild(card);
+                        initChart(s.location);
+                    }
+                    
+                    document.getElementById(`m-${s.location}`).innerText = s.moisture + '%';
+                    document.getElementById(`b-${s.location}`).innerText = s.battery + '%';
+                    document.getElementById(`t-${s.location}`).innerText = new Date(s.updated).toLocaleTimeString();
+                    
+                    updateChart(s.location, s.moisture);
+                });
+            } catch (e) { 
+                console.error("Помилка:", e); 
+            }
         }
 
         function initChart(id) {
             const ctx = document.getElementById(`chart-${id}`).getContext('2d');
             charts[id] = new Chart(ctx, {
                 type: 'line',
-                data: { labels: Array(10).fill(''), datasets: [{ data: Array(10).fill(null), borderColor: '#FFD700', borderWidth: 2, pointRadius: 0, tension: 0.4 }] },
-                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } }, animation: false }
+                data: { labels: ['', '', '', '', ''], datasets: [{ data: [0,0,0,0,0], borderColor: '#FFD700', tension: 0.4, borderWidth: 2, pointRadius: 0 }] },
+                options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false, min: 0, max: 100 } } }
             });
         }
 
@@ -124,8 +81,6 @@
             chart.data.datasets[0].data.shift();
             chart.update();
         }
-
-        function filterSensors() { renderCards(); }
 
         setInterval(updateData, 5000);
         updateData();
