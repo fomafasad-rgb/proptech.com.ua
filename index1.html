@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PropTech Control Panel | GBUD Digital</title>
+    <title>PropTech Control Panel | Digital Diagnostics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <style>
@@ -18,7 +18,6 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--dark);
             color: white;
-            overflow-x: hidden;
         }
 
         .orbitron { font-family: 'Orbitron', sans-serif; }
@@ -46,11 +45,12 @@
             overflow: hidden;
         }
 
+        /* Анімація сканування */
         .scan-line {
             height: 100%;
             background: var(--gold);
             box-shadow: 0 0 10px var(--gold);
-            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 1s ease-in-out;
         }
     </style>
 </head>
@@ -59,14 +59,14 @@
     <header class="border-b border-zinc-900 bg-black/50 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <span class="orbitron text-2xl font-900 tracking-tighter text-yellow-500 italic">GBUD<span class="text-white">.PRO</span></span>
+                <span class="orbitron text-2xl font-900 tracking-tighter text-yellow-500">PROPTECH<span class="text-white">.LAB</span></span>
                 <div class="h-6 w-[1px] bg-zinc-800"></div>
-                <span class="text-[10px] uppercase tracking-[0.3em] text-zinc-500 hidden sm:block font-bold font-mono text-center">Structural Analysis</span>
+                <span class="text-[10px] uppercase tracking-[0.3em] text-zinc-500 hidden sm:block font-bold">Structural Monitoring</span>
             </div>
             <div class="flex items-center gap-6">
                 <div class="flex items-center gap-2">
-                    <div id="status-led" class="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]"></div>
-                    <span id="active-count" class="text-xs font-bold orbitron uppercase tracking-widest text-zinc-400 text-center">System Ready</span>
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span id="active-count" class="text-xs font-bold orbitron uppercase tracking-widest text-zinc-400">System Online</span>
                 </div>
             </div>
         </div>
@@ -76,78 +76,70 @@
         
         <div class="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-                <h1 class="text-4xl font-bold orbitron gold-glow mb-2 uppercase italic tracking-tighter">PropTech Dashboard</h1>
-                <p class="text-zinc-500 text-sm max-w-xl">Цифровий моніторинг вологості фасадних систем DigitalBud. Дані оновлюються в реальному часі.</p>
+                <h1 class="text-4xl font-bold orbitron gold-glow mb-2 uppercase italic"> GBUD Dashboard</h1>
+                <p class="text-zinc-500 text-sm">Дані з датчиків моніторингу вологості фасадних систем у реальному часі.</p>
             </div>
-            <button onclick="fetchData()" class="p-4 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-yellow-500 transition-all active:scale-95 group">
-                <i class="fas fa-sync-alt group-hover:rotate-180 transition-transform duration-500"></i>
-            </button>
+            <div class="flex gap-3">
+                <button onclick="fetchData()" class="p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-yellow-500 transition-colors">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
         </div>
 
-        <div id="sensor-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6 text-center">
-            <div class="col-span-full py-20 text-center text-zinc-700 orbitron tracking-[0.3em] opacity-50">
-                <i class="fas fa-satellite-dish fa-spin text-4xl mb-6 block text-yellow-500"></i>
-                SYNCHRONIZING DATA...
+        <div id="sensor-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div class="col-span-full py-20 text-center text-zinc-700 orbitron tracking-widest">
+                <i class="fas fa-satellite-dish fa-spin text-3xl mb-4 block"></i>
+                Синхронізація з сервером...
             </div>
         </div>
 
     </main>
 
     <footer class="p-10 border-t border-zinc-900 text-center">
-        <p class="text-[10px] uppercase tracking-[0.5em] text-zinc-700">DigitalBud Technical Solutions © 2026 | Kyiv, Ukraine</p>
+        <p class="text-[10px] uppercase tracking-[0.5em] text-zinc-700">DigitalBud Technical Solutions © 2026</p>
     </footer>
 
     <script>
         async function fetchData() {
-            const grid = document.getElementById('sensor-grid');
-            const countLabel = document.getElementById('active-count');
-            const led = document.getElementById('status-led');
-
             try {
-                // АДРЕСА ПОВЕРНУТА!
-                const response = await fetch('https://monitor.proptech.com.ua/?token=Kyiv-2026');
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Kyiv-2026',
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) throw new Error('Unauthorized');
-
+                const response = await fetch('https://monitor.proptech.com.ua/?token=monitor-2026');
                 const raw = await response.json();
+                
+                // Якщо база видала один об'єкт (SENSOR-06), робимо з нього масив
                 const sensors = Array.isArray(raw) ? raw : [raw];
                 
+                const grid = document.getElementById('sensor-grid');
+                const countLabel = document.getElementById('active-count');
+                
                 grid.innerHTML = '';
-                countLabel.textContent = `Online: ${sensors.length} Nodes`;
-                led.className = "w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_#22c55e]";
+                countLabel.textContent = `Nodes Online: ${sensors.length}`;
 
                 sensors.forEach(s => {
                     if(!s.location) return;
 
                     const isAlarm = s.moisture > 60;
                     const card = document.createElement('div');
-                    card.className = 'sensor-card p-8 rounded-[2.5rem] flex flex-col justify-between min-h-[250px] relative overflow-hidden';
+                    card.className = 'sensor-card p-8 rounded-[2rem] flex flex-col justify-between';
                     
                     card.innerHTML = `
-                        <div class="flex justify-between items-center mb-10 text-center">
-                            <span class="orbitron text-[10px] font-bold text-zinc-600 tracking-[0.3em]">${s.location}</span>
-                            <div class="w-1.5 h-1.5 rounded-full ${isAlarm ? 'bg-red-500 shadow-[0_0_10px_red] animate-pulse' : 'bg-yellow-500 shadow-[0_0_10px_rgba(255,215,0,0.5)]'}"></div>
+                        <div class="flex justify-between items-center mb-10">
+                            <span class="orbitron text-[10px] font-bold text-zinc-500 tracking-widest">${s.location}</span>
+                            <div class="w-2 h-2 rounded-full ${isAlarm ? 'bg-red-500 shadow-[0_0_10px_red]' : 'bg-yellow-500 shadow-[0_0_10px_rgba(255,215,0,0.5)]'}"></div>
                         </div>
 
                         <div class="text-center mb-8">
                             <div class="text-6xl orbitron font-900 ${isAlarm ? 'text-red-500' : 'text-white'} italic tracking-tighter">
                                 ${s.moisture}%
                             </div>
-                            <div class="text-[9px] uppercase tracking-[0.4em] text-zinc-700 mt-3 font-black">Humidity Level</div>
+                            <div class="text-[9px] uppercase tracking-[0.3em] text-zinc-600 mt-2 font-bold">Relative Humidity</div>
                         </div>
 
                         <div class="space-y-4">
                             <div class="status-bar">
                                 <div class="scan-line" style="width: ${s.moisture}%"></div>
                             </div>
-                            <div class="flex justify-between text-[9px] orbitron font-bold text-zinc-600 tracking-widest uppercase text-center">
-                                <span><i class="fas fa-bolt mr-1"></i> ${s.battery || 95}%</span>
+                            <div class="flex justify-between text-[9px] orbitron text-zinc-500">
+                                <span><i class="fas fa-battery-three-quarters mr-1"></i> ${s.battery || 95}%</span>
                                 <span>${new Date(s.updated || Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
                         </div>
@@ -156,16 +148,11 @@
                 });
 
             } catch (err) {
-                console.error("Sync error:", err);
-                led.className = "w-2 h-2 bg-red-600 rounded-full shadow-[0_0_8px_red]";
-                countLabel.textContent = "AUTH ERROR";
-                grid.innerHTML = `
-                    <div class="col-span-full py-20 text-center">
-                        <p class="orbitron text-red-500 text-xs tracking-widest mb-4 uppercase font-bold text-center">Помилка доступу: Перевірте токен Kyiv-2026</p>
-                    </div>`;
+                console.error("Connection failed:", err);
             }
         }
 
+        // Оновлюємо кожні 30 сек
         setInterval(fetchData, 30000);
         fetchData();
     </script>
