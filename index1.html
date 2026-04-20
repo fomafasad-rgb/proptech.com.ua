@@ -172,9 +172,30 @@
                 sensors.forEach((s, index) => {
                     if(!s.location) return;
 
-                    const isAlarm = s.moisture > 60;
+                    // ЛОГІКА ТРЬОХ КОЛЬОРІВ ЗАМІСТЬ ОДНОГО
+                    let colorLed = '';
+                    let colorRadar = '';
+                    let colorText = '';
+                    let pulse = '';
+
+                    if (s.moisture < 40) {
+                        // 🟢 ЗЕЛЕНИЙ
+                        colorLed = 'bg-emerald-500 shadow-[0_0_10px_#10b981]';
+                        colorRadar = 'border-t-emerald-500';
+                        colorText = 'text-emerald-400 text-glow';
+                    } else if (s.moisture >= 40 && s.moisture <= 60) {
+                        // 🟠 ПОМАРАНЧЕВИЙ
+                        colorLed = 'bg-orange-500 shadow-[0_0_10px_#f97316]';
+                        colorRadar = 'border-t-orange-500';
+                        colorText = 'text-orange-400 text-glow';
+                    } else {
+                        // 🔴 ЧЕРВОНИЙ
+                        colorLed = 'bg-red-500 shadow-[0_0_10px_red]';
+                        colorRadar = 'border-t-red-500';
+                        colorText = 'text-red-500 text-glow';
+                        pulse = 'animate-pulse';
+                    }
                     
-                    // Невелика затримка для ефекту послідовного включення
                     const delay = index * 100;
 
                     const card = document.createElement('div');
@@ -188,13 +209,13 @@
                             <div class="bg-indigo-950/50 border border-indigo-500/30 px-3 py-1 rounded-md">
                                 <span class="orbitron text-[11px] font-bold text-indigo-300 tracking-[0.2em]">SEC-${s.location}</span>
                             </div>
-                            <div class="w-2 h-2 rounded-full ${isAlarm ? 'bg-red-500 shadow-[0_0_10px_red] animate-pulse' : 'bg-yellow-500 shadow-[0_0_10px_rgba(255,215,0,0.5)]'} mt-1.5"></div>
+                            <div class="w-2 h-2 rounded-full ${colorLed} ${pulse} mt-1.5"></div>
                         </div>
 
                         <div class="radar-circle my-2 z-20">
-                            <div class="radar-spin ${isAlarm ? 'border-t-red-500' : 'border-t-yellow-500'}"></div>
+                            <div class="radar-spin ${colorRadar}"></div>
                             <div class="flex flex-col items-center justify-center">
-                                <span class="text-4xl orbitron font-900 ${isAlarm ? 'text-red-500' : 'text-white text-glow'}">${s.moisture}</span>
+                                <span class="text-4xl orbitron font-900 ${colorText}">${s.moisture}</span>
                                 <span class="text-[10px] text-indigo-400 font-bold">%</span>
                             </div>
                         </div>
@@ -202,7 +223,7 @@
                         <div class="text-[9px] uppercase tracking-[0.4em] text-indigo-300 mt-2 font-bold z-20 mb-4">H2O Level</div>
 
                         <div class="w-full pt-4 border-t border-indigo-500/20 flex justify-between text-[10px] orbitron font-bold text-indigo-400 tracking-widest z-20">
-                            <span class="flex items-center gap-1"><i class="fas fa-battery-half text-yellow-500"></i> ${s.battery || 95}%</span>
+                            <span class="flex items-center gap-1"><i class="fas fa-battery-half text-indigo-400"></i> ${s.battery || 95}%</span>
                             <span>${new Date(s.updated || Date.now()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'})}</span>
                         </div>
                     `;
