@@ -264,8 +264,12 @@
         &copy; 2026 GBUD DIGITAL | PROPTECH LAB | SECURE CONNECTION 256-BIT
     </footer>
 
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/GLTFLoader.js"></script>
+
     <script>
-        // Ефект фонової сітки (Матриця/Техно)
+        // --- Ефект фонової сітки (Матриця) ---
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
 
@@ -318,7 +322,7 @@
         }
         draw();
 
-               // ОНОВЛЕНА логіка: тепер пускає в систему!
+        // --- Логіка кнопки входу ---
         const loginBtn = document.getElementById('loginBtn');
         const accessStatus = document.getElementById('accessStatus');
         let isScanning = false;
@@ -327,18 +331,15 @@
             if(isScanning) return; 
             isScanning = true;
 
-            // Стан 1: Сканування
             loginBtn.classList.remove('denied');
             loginBtn.classList.add('scanning');
             accessStatus.innerHTML = '<span style="color: var(--accent);">СКАНУВАННЯ ВІДБИТКА...</span>';
 
-            // Стан 2: Успішний вхід через 1.5 сек
             setTimeout(() => {
-                loginBtn.style.boxShadow = '0 0 40px #4ade80'; // Зелене сяйво
+                loginBtn.style.boxShadow = '0 0 40px #4ade80'; 
                 loginBtn.style.borderColor = '#4ade80';
                 accessStatus.innerHTML = '<span style="color: #4ade80; font-weight: bold;">✓ ДОСТУП НАДАНО</span>';
                 
-                // Перехід на твій моніторинг через 1 секунду після успіху
                 setTimeout(() => {
                     window.location.href = 'index1.html'; 
                 }, 1000);
@@ -346,43 +347,44 @@
             }, 1500);
         });
 
-           <script>
-    // 1. Створюємо сцену
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xeeeeee); // Світло-сірий фон
+        // --- ТЕСТОВЕ 3D (Золотий сітчастий куб) ---
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 5;
 
-    // 2. Налаштовуємо камеру
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
+        // alpha: true дозволяє бачити твій темний фон сайту за 3D об'єктом
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); 
+        
+        // Робимо блок з 3D адаптивним, але не на весь екран, а як окремий блок знизу
+        renderer.setSize(window.innerWidth, 400); 
+        renderer.domElement.style.position = 'relative';
+        renderer.domElement.style.display = 'block';
+        renderer.domElement.style.margin = '0 auto';
+        renderer.domElement.style.borderTop = '1px solid var(--grid)';
+        
+        document.body.appendChild(renderer.domElement);
 
-    // 3. Рендерер (малювальник)
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // Плавна зупинка при обертанні
 
-    // 4. Додаємо OrbitControls (наше кермо)
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        const geometry = new THREE.BoxGeometry(2, 2, 2);
+        const material = new THREE.MeshPhongMaterial({ color: 0xFFD700, wireframe: true }); 
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
 
-    // 5. Створюємо тестовий куб (замість SmartPlanka)
-    const geometry = new THREE.BoxGeometry(2, 2, 2);
-    const material = new THREE.MeshPhongMaterial({ color: 0x007bff }); // Синій метал
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 2).normalize();
+        scene.add(light);
 
-    // 6. Світло (щоб куб не був чорним)
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(1, 1, 2).normalize();
-    scene.add(light);
-
-    // 7. Цикл анімації
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-    animate();
-</script>
-  
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            cube.rotation.y += 0.005; // Легке авто-обертання
+            cube.rotation.x += 0.005;
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate3D();
     </script>
 </body>
 </html>
