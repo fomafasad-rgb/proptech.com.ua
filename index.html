@@ -195,16 +195,6 @@
             padding: 40px; text-align: center; border-top: 1px solid var(--grid);
             font-size: 0.7rem; color: #333; letter-spacing: 2px;
         }
-
-        /* Контейнер для 3D сфери */
-        #sphere-container {
-            width: 100%;
-            height: 400px;
-            position: relative;
-            border-top: 1px solid var(--grid);
-            display: block;
-            margin: 0 auto;
-        }
     </style>
 </head>
 <body>
@@ -300,9 +290,6 @@
                 </div>
             </div>
         </div>
-        
-        <div id="sphere-container"></div>
-        
     </main>
 
     <footer>
@@ -392,124 +379,102 @@
             }, 1500);
         });
 
-        // --- ІНІЦІАЛІЗАЦІЯ 3D СФЕРИ (ЗАПУСК ПО СКРОЛУ) ---
-        let sphereInitialized = false;
+        // --- ПЕРЕМАЛЬОВАНА СФЕРА У ЖОВТО-БЛАКИТНИЙ (PropTech Lab) ---
+        const scene = new THREE.Scene();
+        
+        // Камера
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+        camera.position.set(0, 0, 4);
 
-        function init3DSphere() {
-            const container = document.getElementById('sphere-container');
-            const scene = new THREE.Scene();
-            
-            // Камера
-            const camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.01, 100);
-            camera.position.set(0, 0, 4);
+        // Рендерер (прозорий фон, щоб видно було твою Матрицю)
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, 400); // Висота блоку 400px
+        renderer.outputEncoding = THREE.sRGBEncoding; // Правильна передача кольору
+        
+        // Розміщення на сторінці (Залишаю твої стилі)
+        renderer.domElement.style.position = 'relative';
+        renderer.domElement.style.display = 'block';
+        renderer.domElement.style.margin = '0 auto';
+        renderer.domElement.style.borderTop = '1px solid var(--grid)';
+        document.body.appendChild(renderer.domElement);
 
-            // Рендерер (прозорий фон, щоб видно було твою Матрицю)
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.outputEncoding = THREE.sRGBEncoding; 
-            
-            container.appendChild(renderer.domElement);
+        // Керування камерою
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
 
-            // Керування камерою
-            const controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
+        // Завантажувач залишаємо тількі для HDRI
+        const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
 
-            // Завантажувач залишаємо тількі для HDRI
-            const loader = new THREE.TextureLoader();
-            loader.setCrossOrigin('anonymous');
+        // Завантаження HDRI фону для правильних відблисків металу
+        loader.load('https://cdn.wtlstudio.com/common-ptr.wtlstudio.com/b137ccb0-c32c-4997-9548-7b090339583d.png', (texture) => {
+            const generator = new THREE.PMREMGenerator(renderer);
+            generator.compileEquirectangularShader();
+            const textureMap = generator.fromCubemap(texture);
+            generator.dispose();
+            texture.dispose();
+            scene.environment = textureMap.texture;
+        });
 
-            // Завантаження HDRI фону для правильних відблисків металу
-            loader.load('https://cdn.wtlstudio.com/common-ptr.wtlstudio.com/b137ccb0-c32c-4997-9548-7b090339583d.png', (texture) => {
-                const generator = new THREE.PMREMGenerator(renderer);
-                generator.compileEquirectangularShader();
-                const textureMap = generator.fromCubemap(texture);
-                generator.dispose();
-                texture.dispose();
-                scene.environment = textureMap.texture;
-            });
+        // --- НАЛАШТУВАННЯ МАТЕРІАЛІВ (Жовтий та Блакитний) ---
+        // Ми використовуємо чисті кольори PBR, без завантаження зовнішніх текстур, щоб уникнути помилок
+        const matBlue = new THREE.MeshStandardMaterial({
+            color: 0x005BBB, // Синій колір (Верхній)
+            metalness: 0.15, // Трохи металевий блиск
+            roughness: 0.3   // Напівглянцевий
+        });
+        const matYellow = new THREE.MeshStandardMaterial({
+            color: 0xFFD500, // Жовтий колір (Нижній)
+            metalness: 0.15,
+            roughness: 0.3
+        });
 
-            // --- НАЛАШТУВАННЯ МАТЕРІАЛІВ (Жовтий та Блакитний) ---
-            const matBlue = new THREE.MeshStandardMaterial({
-                color: 0x005BBB, // Синій колір (Верхній)
-                metalness: 0.15, 
-                roughness: 0.3   
-            });
-            const matYellow = new THREE.MeshStandardMaterial({
-                color: 0xFFD500, // Жовтий колір (Нижній)
-                metalness: 0.15,
-                roughness: 0.3
-            });
+        // --- СТВОРЕННЯ СФЕРИ (Дві півсфери) ---
+        // Оптимізація: 128x64 сегменти (замість 512x512)
+        // Півкуля Верхня (theta angle 0 to PI/2)
+        const geomUpper = new THREE.SphereGeometry(1.5, 128, 64, 0, Math.PI * 2, 0, Math.PI / 2);
+        const meshUpper = new THREE.Mesh(geomUpper, matBlue);
+        scene.add(meshUpper);
 
-            // --- СТВОРЕННЯ СФЕРИ (Дві півсфери) ---
-            const geomUpper = new THREE.SphereGeometry(1.5, 128, 64, 0, Math.PI * 2, 0, Math.PI / 2);
-            const meshUpper = new THREE.Mesh(geomUpper, matBlue);
-            scene.add(meshUpper);
+        // Півкуля Нижня (theta angle PI/2 to PI)
+        const geomLower = new THREE.SphereGeometry(1.5, 128, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+        const meshLower = new THREE.Mesh(geomLower, matYellow);
+        scene.add(meshLower);
 
-            const geomLower = new THREE.SphereGeometry(1.5, 128, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
-            const meshLower = new THREE.Mesh(geomLower, matYellow);
-            scene.add(meshLower);
-
-            // Освітлення
-            scene.add(new THREE.HemisphereLight(0xffffff, 0x4f9aff, 1));
-            const lights = [];
-            for (let i = 0; i < 3; i++) {
-                const light = new THREE.PointLight(0xffffff, 1);
-                lights.push(light);
-                scene.add(light);
-            }
-
-            // Анімація
-            function animate3D() {
-                requestAnimationFrame(animate3D);
-
-                // Обертання джерел світла
-                for (let i = 0; i < 3; i++) {
-                    const light = lights[i];
-                    light.position.set(0, 0, 0);
-                    light.rotateOnAxis(new THREE.Vector3(Number(i === 1 || i === 0), Number(i === 2), Number(i === 0)), THREE.MathUtils.degToRad(1));
-                    const direction = new THREE.Vector3();
-                    light.getWorldDirection(direction);
-                    light.translateOnAxis(direction, 5);
-                }
-                
-                // Повільне обертання обох півкуль
-                meshUpper.rotation.y += 0.005; 
-                meshLower.rotation.y += 0.005;
-
-                controls.update();
-                renderer.render(scene, camera);
-            }
-            
-            // Запускаємо анімацію
-            animate3D();
-            
-            // Адаптивність при зміні розміру вікна
-            window.addEventListener('resize', () => {
-                camera.aspect = container.clientWidth / container.clientHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.clientWidth, container.clientHeight);
-            });
+        // Освітлення (Залишаємо твої джерела світла)
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x4f9aff, 1));
+        const lights = [];
+        for (let i = 0; i < 3; i++) {
+            const light = new THREE.PointLight(0xffffff, 1);
+            lights.push(light);
+            scene.add(light);
         }
 
-        // --- LAZY LOADING (Запуск 3D по скролу) ---
-        const observerOptions = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1 // Спрацює, коли 10% блоку з'явиться на екрані
-        };
+        // Анімація
+        const clock = new THREE.Clock();
+        function animate3D() {
+            requestAnimationFrame(animate3D);
 
-        const observer = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && !sphereInitialized) {
-                    init3DSphere();
-                    sphereInitialized = true;
-                    observer.unobserve(entry.target); // Перестаємо стежити після запуску
-                }
-            });
-        }, observerOptions);
+            // Обертання джерел світла для красивих відблисків
+            for (let i = 0; i < 3; i++) {
+                const light = lights[i];
+                light.position.set(0, 0, 0);
+                light.rotateOnAxis(new THREE.Vector3(Number(i === 1 || i === 0), Number(i === 2), Number(i === 0)), THREE.MathUtils.degToRad(1));
+                const direction = new THREE.Vector3();
+                light.getWorldDirection(direction);
+                light.translateOnAxis(direction, 5);
+            }
+            
+            // Повільне обертання обох півкуль
+            meshUpper.rotation.y += 0.005; 
+            meshLower.rotation.y += 0.005;
 
-        observer.observe(document.getElementById('sphere-container'));
-
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // Запускаємо
+        animate3D();
     </script>
 </body>
 </html>
