@@ -14,6 +14,7 @@
             --accent: #FF8C00;
             --grid: rgba(255, 215, 0, 0.05);
             --glow: 0 0 15px rgba(255, 215, 0, 0.3);
+            --glow-strong: 0 0 30px rgba(255, 215, 0, 0.6), 0 0 60px rgba(255, 215, 0, 0.2);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -59,15 +60,46 @@
         }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
+        /* ОНОВЛЕНИЙ ЗАГОЛОВОК GBUD */
         h1 {
-            font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 8vw, 5rem);
-            text-transform: uppercase; letter-spacing: 5px; color: var(--primary);
-            text-shadow: var(--glow); margin-bottom: 10px;
+            font-family: 'Orbitron', sans-serif; 
+            font-size: clamp(3.5rem, 12vw, 8rem); /* Збільшено розмір */
+            text-transform: uppercase; 
+            color: var(--primary);
+            text-shadow: var(--glow-strong); 
+            margin-bottom: 20px;
+            display: inline-block;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Анімація дихання та розтягування */
+            animation: text-breathe 4s ease-in-out infinite alternate;
+        }
+
+        /* Ключові кадри для анімації заголовка */
+        @keyframes text-breathe {
+            0% { 
+                letter-spacing: 2px; 
+                text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+                transform: scale(0.98);
+            }
+            100% { 
+                letter-spacing: 15px; /* Розтягування */
+                text-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 80px rgba(255, 140, 0, 0.4); /* Сильніше світіння */
+                transform: scale(1.02);
+            }
+        }
+
+        /* Ефект "гуми" при наведенні */
+        h1:hover {
+            animation-play-state: paused;
+            letter-spacing: 25px;
+            text-shadow: 0 0 50px rgba(255, 215, 0, 1), 0 0 100px rgba(255, 140, 0, 0.6);
+            transform: scale(1.05) translateY(-5px);
+            cursor: pointer;
         }
 
         .data-stream { font-size: 0.9rem; color: #555; max-width: 600px; margin-bottom: 40px; }
 
-        /* Панель доступу (ОНОВЛЕНА) */
+        /* Панель доступу */
         .access-panel {
             background: rgba(255, 215, 0, 0.03);
             border: 1px solid var(--grid);
@@ -81,7 +113,7 @@
             position: absolute; top: 5px; right: 10px; font-size: 0.5rem; color: var(--primary); opacity: 0.5;
         }
 
-        /* Оновлена кнопка відбитка */
+        /* Кнопка відбитка */
         .fingerprint {
             width: 90px; height: 90px; margin: 20px auto;
             border: 2px solid var(--primary); border-radius: 50%;
@@ -155,7 +187,7 @@
 
         /* Мобільна адаптація */
         @media (max-width: 768px) {
-            h1 { font-size: 2.5rem; }
+            h1 { font-size: 3.5rem; }
             .tech-grid { grid-template-columns: 1fr; }
         }
 
@@ -178,7 +210,7 @@
     <main>
         <section class="hero">
             <div style="font-size: 0.6rem; color: var(--primary); margin-bottom: 10px;">[ INITIALIZING DIGITAL TWIN... ]</div>
-            <h1>GBUD</span></h1>
+            <h1>GBUD</h1>
             <div class="data-stream">Аналіз цілісності фасадних систем та покрівельного пирога через IoT-датчики та термічне сканування.</div>
 
             <div class="access-panel">
