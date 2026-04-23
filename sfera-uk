@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GBUD Patriotic Sphere 3D</title>
+    <style>
+        body {
+            margin: 0;
+            background: #050505;
+            overflow: hidden;
+            font-family: monospace;
+        }
+        
+        /* Космічна матрична сітка */
+        #bg-canvas {
+            position: fixed; inset: 0; z-index: -1; opacity: 0.6;
+        }
+
+        /* Контейнер для шару на весь екран */
+        #sphere-container {
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100vh;
+            cursor: grab;
+        }
+        #sphere-container:active { cursor: grabbing; }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+    
+    <div id="sphere-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // ==========================================
+        // 1. АНІМАЦІЯ ФОНОВОЇ МАТРИЦІ (КОСМОС)
+        // ==========================================
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resizeBg() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeBg);
+        resizeBg();
+
+        const dots = [];
+        for(let i = 0; i < 100; i++) {
+            dots.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.5,
+                vy: (Math.random() - 0.5) * 0.5
+            });
+        }
+
+        function drawBg() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.05)';
+
+            dots.forEach(d => {
+                d.x += d.vx;
+                d.y += d.vy;
+                if(d.x < 0 || d.x > width) d.vx *= -1;
+                if(d.y < 0 || d.y > height) d.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(d.x, d.y, 1, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            for(let i = 0; i < dots.length; i++) {
+                for(let j = i + 1; j < dots.length; j++) {
+                    let dist = Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y);
+                    if(dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(dots[i].x, dots[i].y);
+                        ctx.lineTo(dots[j].x, dots[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(drawBg);
+        }
+        drawBg();
+
+        // ==========================================
+        // 2. ОРИГІНАЛЬНА ФІЗИКА ТА СВІТЛО 3D ШАРУ
+        // ==========================================
+        const container = document.getElementById('sphere-container');
+        const scene = new THREE.Scene();
+        
+        // Камера
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+        camera.position.set(0, 0, 4);
+
+        // Рендерер (прозорий, щоб видно було космос)
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        // Керування (OrbitControls з інерцією)
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Завантаження HDRI фону для правильних відблисків металу
+        const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
+        loader.load('https://cdn.wtlstudio.com/common-ptr.wtlstudio.com/b137ccb0-c32c-4997-9548-7b090339583d.png', (texture) => {
+            const generator = new THREE.PMREMGenerator(renderer);
+            generator.compileEquirectangularShader();
+            const textureMap = generator.fromCubemap(texture);
+            generator.dispose();
+            texture.dispose();
+            scene.environment = textureMap.texture;
+        });
+
+        // Налаштування матеріалів (Жовтий та Блакитний, як в оригіналі)
+        const matBlue = new THREE.MeshStandardMaterial({
+            color: 0x005BBB, // Синій
+            metalness: 0.15, 
+            roughness: 0.3   
+        });
+        const matYellow = new THREE.MeshStandardMaterial({
+            color: 0xFFD500, // Жовтий
+            metalness: 0.15,
+            roughness: 0.3
+        });
+
+        // Створення шару (Дві півсфери)
+        const geomUpper = new THREE.SphereGeometry(1.5, 128, 64, 0, Math.PI * 2, 0, Math.PI / 2);
+        const meshUpper = new THREE.Mesh(geomUpper, matBlue);
+        scene.add(meshUpper);
+
+        const geomLower = new THREE.SphereGeometry(1.5, 128, 64, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+        const meshLower = new THREE.Mesh(geomLower, matYellow);
+        scene.add(meshLower);
+
+        // ТОЧНО ТЕ САМЕ ОСВІТЛЕННЯ (3 рухомі точки)
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x4f9aff, 1));
+        const lights = [];
+        for (let i = 0; i < 3; i++) {
+            const light = new THREE.PointLight(0xffffff, 1);
+            lights.push(light);
+            scene.add(light);
+        }
+
+        // Анімація
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            // Обертання джерел світла для красивих відблисків!
+            for (let i = 0; i < 3; i++) {
+                const light = lights[i];
+                light.position.set(0, 0, 0);
+                light.rotateOnAxis(new THREE.Vector3(Number(i === 1 || i === 0), Number(i === 2), Number(i === 0)), THREE.MathUtils.degToRad(1));
+                const direction = new THREE.Vector3();
+                light.getWorldDirection(direction);
+                light.translateOnAxis(direction, 5);
+            }
+            
+            // Повільне обертання обох півкуль
+            meshUpper.rotation.y += 0.005; 
+            meshLower.rotation.y += 0.005;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        animate3D();
+
+        // Адаптивність при зміні розміру вікна
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
