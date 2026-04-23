@@ -347,128 +347,85 @@
             }, 1500);
         });
 
-        // --- ДЕМО PBR МАТЕРІАЛІВ (Замість старого куба) ---
+        // --- ПРОФЕСІЙНА ВИБУХ-СХЕМА ФАСАДУ (Exploded View) ---
         const scene = new THREE.Scene();
-        
-        // Камера
-        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
-        camera.position.set(0, 0, 4);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(6, 4, 8);
 
-        // Рендерер (прозорий фон, щоб видно було твою Матрицю)
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, 400); // Висота блоку 400px
-        renderer.outputEncoding = THREE.sRGBEncoding; // Правильна передача кольору для PBR
-        
-        // Розміщення на сторінці
-        renderer.domElement.style.position = 'relative';
+        renderer.setSize(window.innerWidth, 500);
+        renderer.domElement.style.margin = '20px auto';
         renderer.domElement.style.display = 'block';
-        renderer.domElement.style.margin = '0 auto';
-        renderer.domElement.style.borderTop = '1px solid var(--grid)';
         document.body.appendChild(renderer.domElement);
 
-        // Керування камерою
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
 
-        // Завантажувач текстур
-        const loader = new THREE.TextureLoader();
-        loader.setCrossOrigin('anonymous'); // Щоб браузер не блокував картинки з інших сайтів
+        // Група для всієї системи
+        const facadeGroup = new THREE.Group();
+        scene.add(facadeGroup);
 
-        // Налаштування матеріалу
-        let material;
-        let mesh;
-        let assetId = 0;
-        const assets = [ 'stone', 'scales', 'wood' ];
+        // Матеріали
+        const matWall = new THREE.MeshPhongMaterial({ color: 0x444444 }); // Стіна
+        const matIso = new THREE.MeshPhongMaterial({ color: 0x888844, transparent: true, opacity: 0.9 }); // Вата
+        const matSub = new THREE.MeshPhongMaterial({ color: 0xaaaaaa, shininess: 100 }); // Оцинковка
+        const matPanel = new THREE.MeshPhongMaterial({ color: 0xFFD700, shininess: 150 }); // СмартПланка (Золото)
 
-        const generateMaterial = () => {
-            let assetSample = assets[assetId];
-            assetId++;
-            if (assetId > assets.length - 1) { assetId = 0; }
+        // 1. Стіна
+        const wall = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 0.5), matWall);
+        facadeGroup.add(wall);
 
-            const textureScale = 5.0;
-            const texBase = `https://raw.githubusercontent.com/mjurczyk/quixel-to-three/master/example/${assetSample}/${assetSample}`;
+        // 2. Утеплювач
+        const iso = new THREE.Mesh(new THREE.BoxGeometry(3.8, 3.8, 0.6), matIso);
+        facadeGroup.add(iso);
 
-            const texture = loader.load(`${texBase}_t3map.jpg`, t => { t.encoding = THREE.sRGBEncoding; });
-            const normals = loader.load(`${texBase}_t3normal.jpg`);
-            const displacement = loader.load(`${texBase}_t3displacement.jpg`);
-            const pbr = loader.load(`${texBase}_t3pbr.jpg`);
+        // 3. Підсистема (Кронштейни/Направляючі)
+        const sub = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 0.1), matSub);
+        const sub2 = sub.clone();
+        sub.position.x = -1;
+        sub2.position.x = 1;
+        const subGroup = new THREE.Group();
+        subGroup.add(sub, sub2);
+        facadeGroup.add(subGroup);
 
-            [texture, normals, displacement, pbr].forEach(resource => {
-                if(resource) {
-                    resource.repeat.set(textureScale, textureScale);
-                    resource.wrapS = THREE.RepeatWrapping;
-                    resource.wrapT = THREE.RepeatWrapping;
-                }
-            });
+        // 4. СмартПланка (Лицьова панель)
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(4, 1.5, 0.1), matPanel);
+        facadeGroup.add(panel);
 
-            material = new THREE.MeshStandardMaterial({
-                map: texture,
-                normalMap: normals,
-                aoMap: pbr,
-                metalnessMap: pbr,
-                roughnessMap: pbr,
-                displacementMap: displacement,
-                displacementScale: 0.15 // Зменшив рельєф, щоб не рвало текстуру
-            });
+        // Світло
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(5, 5, 5);
+        scene.add(dirLight);
 
-            if(mesh) mesh.material = material;
-        };
-
-        // Завантаження HDRI фону для правильних відблисків металу
-        loader.load('https://cdn.wtlstudio.com/common-ptr.wtlstudio.com/b137ccb0-c32c-4997-9548-7b090339583d.png', (texture) => {
-            const generator = new THREE.PMREMGenerator(renderer);
-            generator.compileEquirectangularShader();
-            const textureMap = generator.fromCubemap(texture);
-            generator.dispose();
-            texture.dispose();
-            scene.environment = textureMap.texture;
-        });
-
-        generateMaterial();
-
-        // Створюємо сферу. ОПТИМІЗАЦІЯ: замість 512x512 поставив 128x128
-        mesh = new THREE.Mesh(new THREE.SphereGeometry(1.5, 128, 128), material);
-        scene.add(mesh);
-
-        // Освітлення
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x4f9aff, 1));
-        const lights = [];
-        for (let i = 0; i < 3; i++) {
-            const light = new THREE.PointLight(0xffffff, 1);
-            lights.push(light);
-            scene.add(light);
-        }
-
-        // Анімація
-        const clock = new THREE.Clock();
-        function animate3D() {
-            requestAnimationFrame(animate3D);
-            const elapsed = clock.getElapsedTime();
+        // Анімація "Вибуху"
+        function animate() {
+            requestAnimationFrame(animate);
             
-            // Зміна матеріалу кожні 5 секунд
-            if (elapsed >= 5.0) {
-                clock.stop();
-                clock.start();
-                generateMaterial();
-            }
+            // Плавний цикл розсування елементів (Explosion)
+            const time = Date.now() * 0.001;
+            const gap = (Math.sin(time) + 1) * 1.2; // Відстань розсування від 0 до 2.4
 
-            // Обертання джерел світла для красивих відблисків
-            for (let i = 0; i < 3; i++) {
-                const light = lights[i];
-                light.position.set(0, 0, 0);
-                light.rotateOnAxis(new THREE.Vector3(Number(i === 1 || i === 0), Number(i === 2), Number(i === 0)), THREE.MathUtils.degToRad(1));
-                const direction = new THREE.Vector3();
-                light.getWorldDirection(direction);
-                light.translateOnAxis(direction, 5);
-            }
+            // wall.position.z = 0; (нерухома)
+            iso.position.z = gap * 0.5 + 0.6;
+            subGroup.position.z = gap * 1.2 + 0.8;
+            panel.position.z = gap * 2.0 + 1.0;
+
+            facadeGroup.rotation.y += 0.002; // Повільне загальне обертання
             
-            mesh.rotation.y += 0.005; // Повільне обертання самої кулі
             controls.update();
             renderer.render(scene, camera);
         }
-        
-        // Запускаємо
-        animate3D();
+
+        animate();
+
+        // Адаптація під розмір вікна
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, 500);
+        });
     </script>
 </body>
 </html>
